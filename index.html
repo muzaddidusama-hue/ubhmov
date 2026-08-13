@@ -460,13 +460,22 @@ config.js is ignored.</code>
                 <div class="admin-table-header" style="display:flex; justify-content:space-between; align-items:center; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass); flex-wrap:wrap; gap:1rem;">
                   <div>
                     <h3 style="font-family:var(--font-secondary); font-size:1.1rem; font-weight:700;">Stremio Add-on Integrations</h3>
-                    <p style="font-size:0.8rem; color:var(--text-med); margin-top:0.2rem;">Install Stremio add-on manifests to discover streams and subtitles directly in the player</p>
+                    <p style="font-size:0.8rem; color:var(--text-med); margin-top:0.2rem;">Install, test, and manage active Stremio add-ons which fetch movies, video streams, and subtitles</p>
                   </div>
-                  <button id="admin-add-stremio-btn" class="primary-btn accent-glow-btn" style="padding:0.5rem 1rem; font-size:0.85rem;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    Install Add-on
-                  </button>
+                  <div style="display:flex; gap:0.65rem; align-items:center; flex-wrap:wrap;">
+                    <button id="admin-check-stremio-btn" class="secondary-btn" style="padding:0.5rem 1rem; font-size:0.85rem; display:inline-flex; align-items:center; gap:0.4rem;">
+                      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                      Run Video Catalog & Health Check
+                    </button>
+                    <button id="admin-add-stremio-btn" class="primary-btn accent-glow-btn" style="padding:0.5rem 1rem; font-size:0.85rem;">
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      Install Add-on
+                    </button>
+                  </div>
                 </div>
+
+                <!-- Live Diagnostic Report Container -->
+                <div id="admin-stremio-diagnostics" class="admin-stremio-diagnostics hidden" style="margin-top:1.25rem;"></div>
 
                 <div id="admin-stremio-list" class="stremio-addons-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1.25rem; margin-top:1.5rem;">
                   <!-- Dynamically populated Stremio addon cards -->

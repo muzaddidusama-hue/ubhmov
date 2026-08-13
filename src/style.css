@@ -2845,6 +2845,147 @@ body {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Multi-Addon Feeds Layout */
+.stremio-feed-jump-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.stremio-jump-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  color: var(--text-med);
+  padding: 0.35rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all var(--transition-fast);
+}
+
+.stremio-jump-pill:hover {
+  background: rgba(0, 242, 254, 0.12);
+  border-color: rgba(0, 242, 254, 0.35);
+  color: var(--accent-cyan);
+  transform: translateY(-1px);
+}
+
+.stremio-all-feeds-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.stremio-feed-row-section {
+  position: relative;
+}
+
+.stremio-feed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.stremio-feed-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.stremio-feed-icon {
+  font-size: 1.25rem;
+}
+
+.stremio-feed-title {
+  font-family: var(--font-secondary);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-high);
+  letter-spacing: -0.2px;
+}
+
+.stremio-feed-badge {
+  font-size: 0.68rem;
+  background: rgba(0, 242, 254, 0.1);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Admin Add-on Diagnostic Health Report Card */
+.diagnostic-report-card {
+  background: rgba(14, 18, 28, 0.9);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  animation: auth-slide-up-kf 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.diag-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.diag-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.diag-metric-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  padding: 0.85rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.diag-metric-num {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-family: var(--font-secondary);
+  color: var(--text-high);
+}
+
+.diag-metric-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.diag-table-wrap {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+
 
 
 

@@ -1,13 +1,13 @@
 import {
-  fetchStremioCatalog,
-  STREMIO_CATALOG_CHANNELS,
+  getActiveAddonCatalogFeeds,
+  fetchStremioFeedItems,
   getStremioAddons
 } from '../utils/apiManager.js';
 import { escapeHTML, sanitizeUrl } from '../utils/security.js';
 
 /**
- * Creates the Stremio Video Streaming Showcase Section component.
- * Displays playable videos and catalog titles fetched directly from Stremio add-ons.
+ * Creates the Stremio Multi-Addon Video Streaming Hub Component.
+ * Renders dedicated video stream sections/carousels for all active & running Stremio add-ons.
  * @param {Object} callbacks - { onWatchClick, onInfoClick, showToast }
  * @returns {HTMLElement}
  */
@@ -19,18 +19,14 @@ export function createStremioServersSection(callbacks = {}) {
   } = callbacks;
 
   const sectionWrapper = document.createElement('div');
-  sectionWrapper.className = 'stremio-video-section-container';
+  sectionWrapper.className = 'stremio-multi-addon-hub';
 
-  let currentChannelId = 'movie_top';
-  let cachedChannelData = {};
-  let isLoading = false;
-
-  function renderSkeletonCards() {
-    return Array.from({ length: 7 }).map(() => `
-      <div class="stremio-video-card skeleton-card">
+  function renderSkeletonRow() {
+    return Array.from({ length: 6 }).map(() => `
+      <div class="stremio-stream-card skeleton-card">
         <div class="card-poster-wrapper skeleton-pulse" style="aspect-ratio: 2/3; border-radius:14px;"></div>
         <div style="padding: 0.75rem 0.25rem;">
-          <div class="skeleton-pulse" style="height:14px; width:70%; margin-bottom:6px; border-radius:4px;"></div>
+          <div class="skeleton-pulse" style="height:14px; width:75%; margin-bottom:6px; border-radius:4px;"></div>
           <div class="skeleton-pulse" style="height:11px; width:45%; border-radius:4px;"></div>
         </div>
       </div>
@@ -39,108 +35,101 @@ export function createStremioServersSection(callbacks = {}) {
 
   function renderShell() {
     const activeAddons = getStremioAddons().filter(a => a.active !== false);
+    const activeFeeds = getActiveAddonCatalogFeeds();
 
     sectionWrapper.innerHTML = `
-      <div class="stremio-stream-hub-header">
-        <div class="stremio-stream-title-group">
-          <div class="stremio-hub-badge">
-            <span class="stremio-hub-pulse-dot"></span>
-            <span>STREMIO STREAM ENGINE (${activeAddons.length} ADD-ONS CONNECTED)</span>
+      <div class="stremio-video-section-container">
+        <!-- Hero Hub Header -->
+        <div class="stremio-stream-hub-header">
+          <div class="stremio-stream-title-group">
+            <div class="stremio-hub-badge">
+              <span class="stremio-hub-pulse-dot"></span>
+              <span>STREMIO MULTI-ADDON ENGINES (${activeAddons.length} RUNNING · ${activeFeeds.length} FEEDS)</span>
+            </div>
+            <h2 class="stremio-stream-title">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="stremio-stream-icon">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Stremio Add-on Video Streams
+            </h2>
+            <p class="stremio-stream-subtitle">
+              Live movie and series feeds fetched across all running Stremio add-on engines with instant 1-click video playback.
+            </p>
           </div>
-          <h2 class="stremio-stream-title">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="stremio-stream-icon">
+        </div>
+
+        <!-- Direct Stream Quick Launcher -->
+        <div class="stremio-direct-stream-bar">
+          <div class="direct-stream-input-wrap">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="direct-stream-icon">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
-            Stremio Add-on Video Streams
-          </h2>
-          <p class="stremio-stream-subtitle">
-            Explore and stream titles directly fetched from your connected Stremio add-on manifests with multi-source video discovery.
-          </p>
-        </div>
-
-        <!-- Carousel Left/Right Arrow Navigation -->
-        <div class="stremio-stream-arrows">
-          <button id="stremio-scroll-prev" class="arrow-btn" title="Previous">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-              <polyline points="15 18 9 12 15 6"></polyline>
+            <input type="text" id="stremio-direct-query-input" placeholder="Enter IMDB ID (e.g. tt10872600 or tt0137523) to stream directly..." autocomplete="off">
+            <button id="stremio-direct-enter-btn" class="hub-enter-key-btn" type="button" title="Click or Press Enter to stream">
+              <span class="kbd-badge">↵ Enter</span>
+            </button>
+          </div>
+          <button id="stremio-direct-play-btn" class="primary-btn accent-glow-btn direct-play-btn">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
-          </button>
-          <button id="stremio-scroll-next" class="arrow-btn" title="Next">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
+            Play Stream
           </button>
         </div>
-      </div>
 
-      <!-- Quick IMDB ID / Title Direct Stream Bar -->
-      <div class="stremio-direct-stream-bar">
-        <div class="direct-stream-input-wrap">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="direct-stream-icon">
-            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-          </svg>
-          <input type="text" id="stremio-direct-query-input" placeholder="Enter IMDB ID (e.g. tt10872600 or tt0137523) to stream video instantly..." autocomplete="off">
-          <button id="stremio-direct-enter-btn" class="hub-enter-key-btn" type="button" title="Click or Press Enter to play">
-            <span class="kbd-badge">↵ Enter</span>
-          </button>
-        </div>
-        <button id="stremio-direct-play-btn" class="primary-btn accent-glow-btn direct-play-btn">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none">
-            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-          </svg>
-          Play Stream
-        </button>
-      </div>
+        <!-- Quick Feed Anchor Jump Pills -->
+        ${activeFeeds.length > 1 ? `
+          <div class="stremio-feed-jump-pills">
+            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Active Feeds:</span>
+            ${activeFeeds.map(f => `
+              <a href="#feed-sec-${escapeHTML(f.feedId)}" class="stremio-jump-pill">
+                <span>${f.icon || '⚡'}</span>
+                <span>${escapeHTML(f.catalogName)}</span>
+              </a>
+            `).join('')}
+          </div>
+        ` : ''}
 
-      <!-- Channel Tabs Switcher -->
-      <div class="stremio-channel-tabs">
-        ${STREMIO_CATALOG_CHANNELS.map(channel => `
-          <button class="stremio-channel-tab ${channel.id === currentChannelId ? 'active' : ''}" data-channel="${escapeHTML(channel.id)}">
-            <span>${channel.icon}</span>
-            <span>${escapeHTML(channel.name)}</span>
-          </button>
-        `).join('')}
-      </div>
+        <!-- Dedicated Multi-Addon Video Carousels Container -->
+        <div id="stremio-all-feeds-container" class="stremio-all-feeds-container">
+          ${activeFeeds.length === 0 ? `
+            <div class="hub-empty-state">
+              <p style="color:var(--text-med);">No active Stremio video feeds found. Enable or install add-ons in the Admin Console.</p>
+            </div>
+          ` : activeFeeds.map(f => `
+            <div class="stremio-feed-row-section" id="feed-sec-${escapeHTML(f.feedId)}" data-feed-id="${escapeHTML(f.feedId)}">
+              <div class="stremio-feed-header">
+                <div class="stremio-feed-title-wrap">
+                  <span class="stremio-feed-icon">${f.icon || '🍿'}</span>
+                  <h3 class="stremio-feed-title">${escapeHTML(f.catalogName)}</h3>
+                  <span class="stremio-feed-badge">⚡ ${escapeHTML(f.addonName)}</span>
+                </div>
+                <div class="stremio-stream-arrows">
+                  <button class="arrow-btn stremio-row-prev" data-target="carousel-${escapeHTML(f.feedId)}" title="Scroll Left">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
+                  <button class="arrow-btn stremio-row-next" data-target="carousel-${escapeHTML(f.feedId)}" title="Scroll Right">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+              </div>
 
-      <!-- Carousel Viewport -->
-      <div class="stremio-viewport-wrapper">
-        <div id="stremio-videos-carousel" class="stremio-videos-carousel">
-          ${renderSkeletonCards()}
+              <div class="stremio-viewport-wrapper">
+                <div class="stremio-videos-carousel" id="carousel-${escapeHTML(f.feedId)}">
+                  ${renderSkeletonRow()}
+                </div>
+              </div>
+            </div>
+          `).join('')}
         </div>
       </div>
     `;
 
-    // Attach listeners
-    attachHeaderListeners();
+    attachGlobalLauncherEvents();
+    loadAllFeedCarousels(activeFeeds);
   }
 
-  function attachHeaderListeners() {
-    const prevBtn = sectionWrapper.querySelector('#stremio-scroll-prev');
-    const nextBtn = sectionWrapper.querySelector('#stremio-scroll-next');
-    const carousel = sectionWrapper.querySelector('#stremio-videos-carousel');
-
-    prevBtn?.addEventListener('click', () => {
-      if (carousel) carousel.scrollBy({ left: -carousel.clientWidth * 0.75, behavior: 'smooth' });
-    });
-
-    nextBtn?.addEventListener('click', () => {
-      if (carousel) carousel.scrollBy({ left: carousel.clientWidth * 0.75, behavior: 'smooth' });
-    });
-
-    // Channel tab clicks
-    sectionWrapper.querySelectorAll('.stremio-channel-tab').forEach(tabBtn => {
-      tabBtn.addEventListener('click', () => {
-        const channelId = tabBtn.getAttribute('data-channel');
-        if (channelId && channelId !== currentChannelId) {
-          currentChannelId = channelId;
-          sectionWrapper.querySelectorAll('.stremio-channel-tab').forEach(b => b.classList.remove('active'));
-          tabBtn.classList.add('active');
-          loadChannelVideos(currentChannelId);
-        }
-      });
-    });
-
-    // Direct Stream input launcher
+  function attachGlobalLauncherEvents() {
     const directInput = sectionWrapper.querySelector('#stremio-direct-query-input');
     const directPlayBtn = sectionWrapper.querySelector('#stremio-direct-play-btn');
     const directEnterBtn = sectionWrapper.querySelector('#stremio-direct-enter-btn');
@@ -152,12 +141,10 @@ export function createStremioServersSection(callbacks = {}) {
         return;
       }
 
-      showToast(`Launching Stremio stream for "${val}"...`, 'info');
-      // If it looks like an IMDB ID (tt...)
+      showToast(`Initiating Stremio stream for "${val}"...`, 'info');
       if (/^tt\d+/i.test(val)) {
         onWatchClick(val, 'movie');
       } else {
-        // Switch to explore search for keyword
         window.location.hash = '#explore';
         const globalSearch = document.getElementById('global-search-input');
         if (globalSearch) {
@@ -175,50 +162,61 @@ export function createStremioServersSection(callbacks = {}) {
         handleDirectStream();
       }
     });
-  }
 
-  async function loadChannelVideos(channelId) {
-    const carousel = sectionWrapper.querySelector('#stremio-videos-carousel');
-    if (!carousel) return;
-
-    if (cachedChannelData[channelId] && cachedChannelData[channelId].length > 0) {
-      renderVideoCards(cachedChannelData[channelId], carousel);
-      return;
-    }
-
-    carousel.innerHTML = renderSkeletonCards();
-    isLoading = true;
-
-    try {
-      const items = await fetchStremioCatalog(channelId);
-      cachedChannelData[channelId] = items;
-      renderVideoCards(items, carousel);
-    } catch (err) {
-      carousel.innerHTML = `
-        <div class="hub-empty-state">
-          <p style="color:#ef4444;">Failed to load Stremio stream feed: ${escapeHTML(err.message)}</p>
-          <button class="secondary-btn hub-btn-sm" id="stremio-retry-feed-btn">Retry Feed</button>
-        </div>
-      `;
-      carousel.querySelector('#stremio-retry-feed-btn')?.addEventListener('click', () => {
-        loadChannelVideos(channelId);
+    // Arrow scroll listeners
+    sectionWrapper.querySelectorAll('.stremio-row-prev').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        const c = sectionWrapper.querySelector(`#${targetId}`);
+        if (c) c.scrollBy({ left: -c.clientWidth * 0.75, behavior: 'smooth' });
       });
-    } finally {
-      isLoading = false;
-    }
+    });
+
+    sectionWrapper.querySelectorAll('.stremio-row-next').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        const c = sectionWrapper.querySelector(`#${targetId}`);
+        if (c) c.scrollBy({ left: c.clientWidth * 0.75, behavior: 'smooth' });
+      });
+    });
+
+    // Smooth scroll for anchor jump pills
+    sectionWrapper.querySelectorAll('.stremio-jump-pill').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetSec = sectionWrapper.querySelector(link.getAttribute('href'));
+        if (targetSec) {
+          targetSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    });
   }
 
-  function renderVideoCards(items, container) {
+  async function loadAllFeedCarousels(feeds) {
+    feeds.forEach(async (feed) => {
+      const carousel = sectionWrapper.querySelector(`#carousel-${feed.feedId}`);
+      if (!carousel) return;
+
+      try {
+        const items = await fetchStremioFeedItems(feed);
+        renderFeedCards(items, carousel, feed);
+      } catch (err) {
+        carousel.innerHTML = `
+          <div style="padding: 1.5rem; color: #ef4444; font-size: 0.85rem;">
+            Failed to load items: ${escapeHTML(err.message)}
+          </div>
+        `;
+      }
+    });
+  }
+
+  function renderFeedCards(items, container, feed) {
     container.innerHTML = '';
 
     if (!items || items.length === 0) {
       container.innerHTML = `
-        <div class="hub-empty-state">
-          <svg viewBox="0 0 24 24" width="40" height="40" stroke="var(--text-muted)" stroke-width="1.5" fill="none">
-            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-          </svg>
-          <h3>No Stremio Streams in Channel</h3>
-          <p>Make sure your Stremio add-on manifests are enabled and active.</p>
+        <div style="padding: 1.5rem 1rem; color: var(--text-muted); font-size: 0.82rem;">
+          No titles found in this feed.
         </div>
       `;
       return;
@@ -271,20 +269,16 @@ export function createStremioServersSection(callbacks = {}) {
         </div>
       `;
 
-      // Event Listeners:
-      // Clicking "Play Stream" launches the video player overlay directly!
       card.querySelector('.stremio-play-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         onWatchClick(item.id, type);
       });
 
-      // Clicking "Details" opens details modal
       card.querySelector('.stremio-info-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         onInfoClick(item.id, type);
       });
 
-      // Clicking card anywhere opens details modal / stream
       card.addEventListener('click', () => {
         onInfoClick(item.id, type);
       });
@@ -293,14 +287,12 @@ export function createStremioServersSection(callbacks = {}) {
     });
   }
 
-  // Initial Shell Render & Load first channel videos
+  // Initial Render
   renderShell();
-  loadChannelVideos(currentChannelId);
 
-  // Auto-refresh when add-ons configuration changes
+  // Listen for addon additions/toggles to re-render all running addon sections
   window.addEventListener('stremio-addons-changed', () => {
-    cachedChannelData = {};
-    loadChannelVideos(currentChannelId);
+    renderShell();
   });
 
   return sectionWrapper;

@@ -17,7 +17,8 @@ import {
   installStremioAddon,
   removeStremioAddon,
   toggleStremioAddon,
-  POPULAR_STREMIO_ADDONS_PRESETS
+  POPULAR_STREMIO_ADDONS_PRESETS,
+  runAddonHealthAndCapabilityCheck
 } from './utils/apiManager.js';
 
 // ==========================================================================
@@ -1551,6 +1552,130 @@ function initAdminModalsAndActions() {
       showToast(`Streaming server "${name}" saved successfully!`, 'success');
     };
   }
+
+  // Stremio Addons Diagnostic Health & Video Fetch Check Button
+  const checkAddonsBtn = document.getElementById('admin-check-stremio-btn');
+  const diagContainer = document.getElementById('admin-stremio-diagnostics');
+
+  checkAddonsBtn?.addEventListener('click', async () => {
+    checkAddonsBtn.disabled = true;
+    checkAddonsBtn.innerHTML = `
+      <span class="hub-spinner-sm" style="display:inline-block; margin-right:4px;"></span>
+      Checking Add-on Feeds...
+    `;
+    showToast('Running live video catalog and streaming check on all add-ons...', 'info');
+
+    try {
+      const report = await runAddonHealthAndCapabilityCheck();
+
+      if (diagContainer) {
+        diagContainer.classList.remove('hidden');
+        diagContainer.innerHTML = `
+          <div class="diagnostic-report-card">
+            <div class="diag-header-row">
+              <div>
+                <h4 style="font-size:1rem; font-weight:700; color:var(--text-high); display:flex; align-items:center; gap:0.5rem;">
+                  <span style="color:var(--accent-cyan);">⚡</span> Add-on Video Capabilities & Health Report
+                </h4>
+                <p style="font-size:0.8rem; color:var(--text-med); margin-top:0.2rem;">
+                  Tested in ${report.totalDurationMs}ms · ${report.reachableCount}/${report.totalChecked} Add-ons Online · ${report.videoFetchCount} Capable of Fetching Videos
+                </p>
+              </div>
+              <button id="diag-close-report-btn" class="action-badge-btn" style="padding:0.35rem 0.75rem;">Close Report &times;</button>
+            </div>
+
+            <!-- Quick Metrics Grid -->
+            <div class="diag-metrics-grid">
+              <div class="diag-metric-item">
+                <span class="diag-metric-num">${report.totalChecked}</span>
+                <span class="diag-metric-label">Add-ons Checked</span>
+              </div>
+              <div class="diag-metric-item">
+                <span class="diag-metric-num" style="color:#10b981;">${report.reachableCount}</span>
+                <span class="diag-metric-label">Online & Reachable</span>
+              </div>
+              <div class="diag-metric-item">
+                <span class="diag-metric-num" style="color:var(--accent-cyan);">${report.videoFetchCount}</span>
+                <span class="diag-metric-label">Movie / Video Catalogs</span>
+              </div>
+              <div class="diag-metric-item">
+                <span class="diag-metric-num" style="color:#f59e0b;">${report.streamCount}</span>
+                <span class="diag-metric-label">Stream Scrapers</span>
+              </div>
+            </div>
+
+            <!-- Detailed Add-on Table -->
+            <div class="diag-table-wrap">
+              <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-glass); color:var(--text-muted); text-align:left;">
+                    <th style="padding:0.6rem 0.8rem;">Add-on</th>
+                    <th style="padding:0.6rem 0.8rem;">Status & Latency</th>
+                    <th style="padding:0.6rem 0.8rem;">Video Fetch Test</th>
+                    <th style="padding:0.6rem 0.8rem;">Capabilities</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${report.results.map(r => `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                      <td style="padding:0.75rem 0.8rem;">
+                        <strong style="color:var(--text-high);">${escapeHTML(r.name)}</strong>
+                        <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">v${escapeHTML(r.version)}</div>
+                      </td>
+                      <td style="padding:0.75rem 0.8rem;">
+                        ${r.isReachable ? `
+                          <span class="status-badge approved">● Online (${r.latencyMs}ms)</span>
+                        ` : `
+                          <span class="status-badge suspended">✕ Offline</span>
+                        `}
+                      </td>
+                      <td style="padding:0.75rem 0.8rem;">
+                        ${r.canFetchVideos ? `
+                          <div style="color:#10b981; font-weight:600;">
+                            ✓ Fetched ${r.videoSampleCount} video titles
+                          </div>
+                          ${r.sampleTitles.length > 0 ? `
+                            <div style="font-size:0.72rem; color:var(--text-med); margin-top:2px;">
+                              e.g. ${escapeHTML(r.sampleTitles.join(', '))}
+                            </div>
+                          ` : ''}
+                        ` : (r.isReachable ? `
+                          <span style="color:var(--text-muted);">No direct catalog (Streams/Subtitles only)</span>
+                        ` : `
+                          <span style="color:#ef4444;">${escapeHTML(r.error || 'Failed')}</span>
+                        `)}
+                      </td>
+                      <td style="padding:0.75rem 0.8rem;">
+                        <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
+                          ${r.canFetchVideos ? '<span class="hub-card-tag preset-tag">🎬 Video Feeds</span>' : ''}
+                          ${r.canStream ? '<span class="hub-card-tag preset-tag">⚡ Direct Streams</span>' : ''}
+                          ${r.canSubtitles ? '<span class="hub-card-tag">💬 Subtitles</span>' : ''}
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+
+        diagContainer.querySelector('#diag-close-report-btn')?.addEventListener('click', () => {
+          diagContainer.classList.add('hidden');
+        });
+      }
+
+      showToast(`Health Check Complete: ${report.reachableCount} online, ${report.videoFetchCount} can fetch videos!`, 'success');
+    } catch (err) {
+      showToast('Diagnostic check error: ' + err.message, 'error');
+    } finally {
+      checkAddonsBtn.disabled = false;
+      checkAddonsBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        Run Video Catalog & Health Check
+      `;
+    }
+  });
 
   // Stremio Addon Modal triggers
   const stremioModal = document.getElementById('modal-stremio-addon');

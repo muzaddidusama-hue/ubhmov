@@ -85,10 +85,30 @@ export const DEFAULT_STREMIO_ADDONS = [
     description: 'Official Cinemeta metadata provider for movies & series IMDB mappings',
     manifestUrl: 'https://v3-cinemeta.strem.io/manifest.json',
     version: '3.0.12',
-    resources: ['meta'],
+    resources: ['meta', 'catalog'],
     types: ['movie', 'series'],
+    catalogs: [
+      { type: 'movie', id: 'top', name: 'Top Movies' },
+      { type: 'series', id: 'top', name: 'Top Series' }
+    ],
     active: true,
     isOfficial: true
+  },
+  {
+    id: 'cyberflix',
+    name: 'CyberFlix Catalog',
+    description: 'Direct feeds for Netflix, Apple TV+, Disney+, and HBO Max titles',
+    manifestUrl: 'https://cyberflix.elfhosted.com/manifest.json',
+    version: '1.4.2',
+    resources: ['meta', 'catalog'],
+    types: ['movie', 'series'],
+    catalogs: [
+      { type: 'movie', id: 'netflix', name: 'Netflix Movies' },
+      { type: 'movie', id: 'apple', name: 'Apple TV+ Movies' },
+      { type: 'series', id: 'netflix', name: 'Netflix Series' }
+    ],
+    active: true,
+    isOfficial: false
   },
   {
     id: 'opensubtitles',
@@ -98,6 +118,7 @@ export const DEFAULT_STREMIO_ADDONS = [
     version: '1.0.0',
     resources: ['subtitles'],
     types: ['movie', 'series'],
+    catalogs: [],
     active: true,
     isOfficial: true
   }
@@ -251,6 +272,7 @@ export async function installStremioAddon(manifestInputUrl) {
     version: manifest.version || '1.0.0',
     resources: manifest.resources || ['stream'],
     types: manifest.types || ['movie', 'series'],
+    catalogs: manifest.catalogs || [],
     background: manifest.background || '',
     logo: manifest.logo || '',
     active: true,
@@ -499,14 +521,74 @@ export const STREMIO_CATALOG_CHANNELS = [
  * @param {string} channelId - e.g. 'movie_top', 'series_top', 'cyberflix_netflix'
  * @returns {Promise<Array>} List of standardized movie/series items
  */
-export async function fetchStremioCatalog(channelId = 'movie_top') {
-  const channel = STREMIO_CATALOG_CHANNELS.find(c => c.id === channelId) || STREMIO_CATALOG_CHANNELS[0];
-  const url = channel.endpoint;
+/**
+ * Resolves all active catalog feeds from all running/active Stremio add-ons
+ * @returns {Array<Object>} List of feed descriptors
+ */
+export function getActiveAddonCatalogFeeds() {
+  const activeAddons = getStremioAddons().filter(a => a.active !== false);
+  const feeds = [];
+
+  activeAddons.forEach(addon => {
+    const baseUrl = addon.manifestUrl.replace(/\/manifest\.json$/i, '').replace(/\/+$/, '');
+    
+    // Check if addon has explicit catalogs array
+    if (Array.isArray(addon.catalogs) && addon.catalogs.length > 0) {
+      addon.catalogs.forEach(cat => {
+        const catType = cat.type || 'movie';
+        const catId = cat.id || 'top';
+        const icon = catType === 'movie' ? '🍿' : (catType === 'series' || catType === 'tv' ? '📺' : '🎬');
+        feeds.push({
+          feedId: `${addon.id}_${catType}_${catId}`,
+          addonId: addon.id,
+          addonName: addon.name,
+          catalogType: catType === 'series' ? 'tv' : catType,
+          catalogId: catId,
+          catalogName: cat.name ? `${addon.name} - ${cat.name}` : `${addon.name} ${catType}`,
+          endpoint: `${baseUrl}/catalog/${catType}/${catId}.json`,
+          icon: icon
+        });
+      });
+    } else if (addon.id === 'cinemeta' || (addon.resources && (addon.resources.includes('meta') || addon.resources.includes('catalog')))) {
+      // Default Cinemeta/meta catalogs fallback
+      feeds.push({
+        feedId: `${addon.id}_movie_top`,
+        addonId: addon.id,
+        addonName: addon.name,
+        catalogType: 'movie',
+        catalogId: 'top',
+        catalogName: `${addon.name} - Top Movies`,
+        endpoint: `${baseUrl}/catalog/movie/top.json`,
+        icon: '🍿'
+      });
+      feeds.push({
+        feedId: `${addon.id}_series_top`,
+        addonId: addon.id,
+        addonName: addon.name,
+        catalogType: 'tv',
+        catalogId: 'top',
+        catalogName: `${addon.name} - Popular TV Series`,
+        endpoint: `${baseUrl}/catalog/series/top.json`,
+        icon: '📺'
+      });
+    }
+  });
+
+  return feeds;
+}
+
+/**
+ * Fetch video items from a specific Stremio catalog feed
+ * @param {Object} feed - Feed descriptor
+ * @returns {Promise<Array>} List of standardized movie/series items
+ */
+export async function fetchStremioFeedItems(feed) {
+  if (!feed || !feed.endpoint) return [];
 
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000); // 6s timeout
-    const res = await fetch(url, {
+    const res = await fetch(feed.endpoint, {
       signal: controller.signal,
       headers: { 'Accept': 'application/json' }
     });
@@ -539,13 +621,130 @@ export async function fetchStremioCatalog(channelId = 'movie_top') {
         overview: meta.description || 'Streamable via Stremio add-on engines.',
         genres: Array.isArray(meta.genres) ? meta.genres : [],
         isStremioStream: true,
-        sourceEngine: 'Stremio Add-on'
+        sourceEngine: feed.addonName || 'Stremio Add-on'
       };
     });
   } catch (err) {
-    console.warn(`Failed to fetch Stremio catalog for channel ${channelId}:`, err);
+    console.warn(`Failed to fetch Stremio feed for ${feed.catalogName}:`, err);
     return [];
   }
+}
+
+/**
+ * Diagnostic Runner: Checks all active & installed Stremio add-ons for:
+ * 1. Manifest connectivity & response latency (RTT)
+ * 2. Ability to fetch movies/videos from catalogs or meta
+ * 3. Streaming and subtitle scraper capabilities
+ * @returns {Promise<Object>} Diagnostic Results & Report
+ */
+export async function runAddonHealthAndCapabilityCheck() {
+  const addons = getStremioAddons();
+  const startTime = performance.now();
+
+  const checkPromises = addons.map(async (addon) => {
+    const probeStart = performance.now();
+    const result = {
+      id: addon.id,
+      name: addon.name,
+      manifestUrl: addon.manifestUrl,
+      version: addon.version || '1.0.0',
+      active: addon.active !== false,
+      isReachable: false,
+      latencyMs: 0,
+      canFetchVideos: false,
+      videoSampleCount: 0,
+      sampleTitles: [],
+      canStream: false,
+      canSubtitles: false,
+      detectedCatalogs: [],
+      error: null
+    };
+
+    try {
+      // 1. Probe Manifest
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4500);
+      const res = await fetch(addon.manifestUrl, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      });
+      clearTimeout(timeout);
+
+      result.latencyMs = Math.round(performance.now() - probeStart);
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const manifest = await res.json();
+      result.isReachable = true;
+
+      // Extract capabilities from manifest
+      const resources = manifest.resources || addon.resources || [];
+      const resourceNames = resources.map(r => typeof r === 'string' ? r : (r.name || ''));
+      result.canStream = resourceNames.includes('stream');
+      result.canSubtitles = resourceNames.includes('subtitles');
+
+      // Check catalog capabilities
+      const baseUrl = addon.manifestUrl.replace(/\/manifest\.json$/i, '').replace(/\/+$/, '');
+      const catalogs = manifest.catalogs || addon.catalogs || [];
+      result.detectedCatalogs = catalogs;
+
+      // 2. Video Fetch Test: probe catalog if available or fallback
+      let testEndpoint = '';
+      if (catalogs.length > 0) {
+        const firstCat = catalogs[0];
+        testEndpoint = `${baseUrl}/catalog/${firstCat.type}/${firstCat.id}.json`;
+      } else if (resourceNames.includes('meta') || resourceNames.includes('catalog') || addon.id === 'cinemeta') {
+        testEndpoint = `${baseUrl}/catalog/movie/top.json`;
+      }
+
+      if (testEndpoint) {
+        try {
+          const catController = new AbortController();
+          const catTimeout = setTimeout(() => catController.abort(), 4500);
+          const catRes = await fetch(testEndpoint, {
+            signal: catController.signal,
+            headers: { 'Accept': 'application/json' }
+          });
+          clearTimeout(catTimeout);
+
+          if (catRes.ok) {
+            const catData = await catRes.json();
+            if (catData && Array.isArray(catData.metas) && catData.metas.length > 0) {
+              result.canFetchVideos = true;
+              result.videoSampleCount = catData.metas.length;
+              result.sampleTitles = catData.metas.slice(0, 3).map(m => m.name || m.title || 'Untitled');
+            }
+          }
+        } catch (catErr) {
+          console.warn(`Catalog fetch test note for ${addon.name}:`, catErr.message);
+        }
+      }
+
+    } catch (err) {
+      result.latencyMs = Math.round(performance.now() - probeStart);
+      result.error = err.message || 'Connection failed';
+    }
+
+    return result;
+  });
+
+  const results = await Promise.all(checkPromises);
+  const totalDurationMs = Math.round(performance.now() - startTime);
+
+  const reachableCount = results.filter(r => r.isReachable).length;
+  const videoFetchCount = results.filter(r => r.canFetchVideos).length;
+  const streamCount = results.filter(r => r.canStream).length;
+
+  return {
+    totalChecked: addons.length,
+    reachableCount,
+    videoFetchCount,
+    streamCount,
+    totalDurationMs,
+    results
+  };
 }
 
 
