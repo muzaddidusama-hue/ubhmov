@@ -1567,6 +1567,7 @@ function initAdminModalsAndActions() {
 
     try {
       const report = await runAddonHealthAndCapabilityCheck();
+      const failedAddons = report.results.filter(r => !r.isReachable || r.error);
 
       if (diagContainer) {
         diagContainer.classList.remove('hidden');
@@ -1581,7 +1582,15 @@ function initAdminModalsAndActions() {
                   Tested in ${report.totalDurationMs}ms · ${report.reachableCount}/${report.totalChecked} Add-ons Online · ${report.videoFetchCount} Capable of Fetching Videos
                 </p>
               </div>
-              <button id="diag-close-report-btn" class="action-badge-btn" style="padding:0.35rem 0.75rem;">Close Report &times;</button>
+              <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                ${failedAddons.length > 0 ? `
+                  <button id="diag-remove-failed-btn" class="action-badge-btn danger-action" style="padding:0.4rem 0.85rem; display:inline-flex; align-items:center; gap:0.35rem; font-weight:700;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    Remove All Failed (${failedAddons.length})
+                  </button>
+                ` : ''}
+                <button id="diag-close-report-btn" class="action-badge-btn" style="padding:0.4rem 0.75rem;">Close Report &times;</button>
+              </div>
             </div>
 
             <!-- Quick Metrics Grid -->
@@ -1613,47 +1622,60 @@ function initAdminModalsAndActions() {
                     <th style="padding:0.6rem 0.8rem;">Status & Latency</th>
                     <th style="padding:0.6rem 0.8rem;">Video Fetch Test</th>
                     <th style="padding:0.6rem 0.8rem;">Capabilities</th>
+                    <th style="padding:0.6rem 0.8rem; text-align:right;">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${report.results.map(r => `
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                      <td style="padding:0.75rem 0.8rem;">
-                        <strong style="color:var(--text-high);">${escapeHTML(r.name)}</strong>
-                        <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">v${escapeHTML(r.version)}</div>
-                      </td>
-                      <td style="padding:0.75rem 0.8rem;">
-                        ${r.isReachable ? `
-                          <span class="status-badge approved">● Online (${r.latencyMs}ms)</span>
-                        ` : `
-                          <span class="status-badge suspended">✕ Offline</span>
-                        `}
-                      </td>
-                      <td style="padding:0.75rem 0.8rem;">
-                        ${r.canFetchVideos ? `
-                          <div style="color:#10b981; font-weight:600;">
-                            ✓ Fetched ${r.videoSampleCount} video titles
-                          </div>
-                          ${r.sampleTitles.length > 0 ? `
-                            <div style="font-size:0.72rem; color:var(--text-med); margin-top:2px;">
-                              e.g. ${escapeHTML(r.sampleTitles.join(', '))}
+                  ${report.results.map(r => {
+                    const isFailed = !r.isReachable || r.error;
+                    return `
+                      <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                        <td style="padding:0.75rem 0.8rem;">
+                          <strong style="color:var(--text-high);">${escapeHTML(r.name)}</strong>
+                          <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">v${escapeHTML(r.version)}</div>
+                        </td>
+                        <td style="padding:0.75rem 0.8rem;">
+                          ${r.isReachable ? `
+                            <span class="status-badge approved">● Online (${r.latencyMs}ms)</span>
+                          ` : `
+                            <span class="status-badge suspended">✕ Offline</span>
+                          `}
+                        </td>
+                        <td style="padding:0.75rem 0.8rem;">
+                          ${r.canFetchVideos ? `
+                            <div style="color:#10b981; font-weight:600;">
+                              ✓ Fetched ${r.videoSampleCount} video titles
                             </div>
-                          ` : ''}
-                        ` : (r.isReachable ? `
-                          <span style="color:var(--text-muted);">No direct catalog (Streams/Subtitles only)</span>
-                        ` : `
-                          <span style="color:#ef4444;">${escapeHTML(r.error || 'Failed')}</span>
-                        `)}
-                      </td>
-                      <td style="padding:0.75rem 0.8rem;">
-                        <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
-                          ${r.canFetchVideos ? '<span class="hub-card-tag preset-tag">🎬 Video Feeds</span>' : ''}
-                          ${r.canStream ? '<span class="hub-card-tag preset-tag">⚡ Direct Streams</span>' : ''}
-                          ${r.canSubtitles ? '<span class="hub-card-tag">💬 Subtitles</span>' : ''}
-                        </div>
-                      </td>
-                    </tr>
-                  `).join('')}
+                            ${r.sampleTitles.length > 0 ? `
+                              <div style="font-size:0.72rem; color:var(--text-med); margin-top:2px;">
+                                e.g. ${escapeHTML(r.sampleTitles.join(', '))}
+                              </div>
+                            ` : ''}
+                          ` : (r.isReachable ? `
+                            <span style="color:var(--text-muted);">No direct catalog (Streams/Subtitles only)</span>
+                          ` : `
+                            <span style="color:#ef4444;">${escapeHTML(r.error || 'Connection Failed')}</span>
+                          `)}
+                        </td>
+                        <td style="padding:0.75rem 0.8rem;">
+                          <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
+                            ${r.canFetchVideos ? '<span class="hub-card-tag preset-tag">🎬 Video Feeds</span>' : ''}
+                            ${r.canStream ? '<span class="hub-card-tag preset-tag">⚡ Direct Streams</span>' : ''}
+                            ${r.canSubtitles ? '<span class="hub-card-tag">💬 Subtitles</span>' : ''}
+                          </div>
+                        </td>
+                        <td style="padding:0.75rem 0.8rem; text-align:right;">
+                          ${isFailed ? `
+                            <button class="action-badge-btn danger-action diag-remove-single-btn" data-id="${escapeHTML(r.id)}" title="Remove this failed add-on">
+                              Remove
+                            </button>
+                          ` : `
+                            <span style="color:#10b981; font-size:0.75rem; font-weight:600;">✓ Healthy</span>
+                          `}
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
@@ -1662,6 +1684,32 @@ function initAdminModalsAndActions() {
 
         diagContainer.querySelector('#diag-close-report-btn')?.addEventListener('click', () => {
           diagContainer.classList.add('hidden');
+        });
+
+        diagContainer.querySelector('#diag-remove-failed-btn')?.addEventListener('click', () => {
+          if (confirm(`Are you sure you want to remove all ${failedAddons.length} failed/unreachable add-on(s)?`)) {
+            failedAddons.forEach(f => {
+              removeStremioAddon(f.id);
+            });
+            showToast(`Removed ${failedAddons.length} failed add-on(s).`, 'success');
+            renderAdminStremioList();
+            syncAdminConfigToCloud();
+            diagContainer.classList.add('hidden');
+          }
+        });
+
+        diagContainer.querySelectorAll('.diag-remove-single-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const match = report.results.find(r => r.id === id);
+            if (confirm(`Remove failed add-on "${match?.name || id}"?`)) {
+              removeStremioAddon(id);
+              showToast(`Removed add-on "${match?.name || id}".`, 'info');
+              renderAdminStremioList();
+              syncAdminConfigToCloud();
+              btn.closest('tr')?.remove();
+            }
+          });
         });
       }
 
