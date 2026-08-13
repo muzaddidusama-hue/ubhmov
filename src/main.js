@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import { tmdb, getApiKey, isApiConfigured, clearTmdbCache } from './tmdb.js';
 import { createHeroSliderComponent } from './components/hero.js';
 import { createCarouselComponent, createSkeletonCarouselComponent, createMovieCard } from './components/carousel.js';
+import { createStremioServersSection } from './components/stremioSection.js';
 import { populateDetailsModal } from './components/details.js';
 import { openPlayerOverlay } from './components/player.js';
 import { firebaseOperations, firebaseActive, firebaseInitPromise } from './firebase.js';
@@ -290,6 +291,20 @@ async function loadHomeFeeds() {
     nowPlayingContainer.appendChild(
       createCarouselComponent('Now in Theatres', nowPlaying.results || [], 'movie', handleInfoClick)
     );
+
+    // 5. Stremio Add-ons & Streaming Servers Hub Section
+    const stremioSectionContainer = document.getElementById('section-stremio-servers');
+    if (stremioSectionContainer) {
+      stremioSectionContainer.innerHTML = '';
+      stremioSectionContainer.appendChild(
+        createStremioServersSection({
+          onOpenServerModal: (srv) => openServerModal(srv),
+          onOpenStremioModal: () => openStremioModal(),
+          showToast: (msg, type) => showToast(msg, type),
+          syncCloud: () => syncAdminConfigToCloud()
+        })
+      );
+    }
 
   } catch (err) {
     showToast('Failed to load feed from TMDB API: ' + err.message, 'error');
@@ -1410,6 +1425,13 @@ function openServerModal(server = null) {
   modal.classList.remove('hidden');
 }
 
+function openStremioModal() {
+  const stremioModal = document.getElementById('modal-stremio-addon');
+  const urlInput = document.getElementById('stremio-form-url');
+  if (urlInput) urlInput.value = '';
+  if (stremioModal) stremioModal.classList.remove('hidden');
+}
+
 function initAdminModalsAndActions() {
   // Add server button
   document.getElementById('admin-add-server-btn')?.addEventListener('click', () => {
@@ -1453,8 +1475,7 @@ function initAdminModalsAndActions() {
   // Stremio Addon Modal triggers
   const stremioModal = document.getElementById('modal-stremio-addon');
   document.getElementById('admin-add-stremio-btn')?.addEventListener('click', () => {
-    document.getElementById('stremio-form-url').value = '';
-    stremioModal.classList.remove('hidden');
+    openStremioModal();
   });
 
   document.getElementById('modal-stremio-close-btn')?.addEventListener('click', () => stremioModal.classList.add('hidden'));

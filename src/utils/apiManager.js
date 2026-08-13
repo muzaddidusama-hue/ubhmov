@@ -354,3 +354,105 @@ export async function fetchStremioStreams(imdbId, type = 'movie', season = 1, ep
 
   return results;
 }
+
+/**
+ * Community Recommended Stremio Addons Presets for 1-Click Installation
+ */
+export const POPULAR_STREMIO_ADDONS_PRESETS = [
+  {
+    id: 'torrentio',
+    name: 'Torrentio (Torrents & Debrid)',
+    description: 'Scrapes torrent streams from multiple providers with support for RealDebrid, AllDebrid, Premiumize, and direct P2P.',
+    manifestUrl: 'https://torrentio.strem.fun/manifest.json',
+    version: '1.0.13',
+    tags: ['4K Streams', 'Debrid Support', 'Auto-Sync'],
+    icon: '⚡'
+  },
+  {
+    id: 'cyberflix',
+    name: 'CyberFlix Catalog',
+    description: 'Brings curated catalogs from Netflix, Apple TV+, HBO Max, Disney+, Hulu, and Paramount+ directly into your library.',
+    manifestUrl: 'https://cyberflix.elfhosted.com/c/catalogs/manifest.json',
+    version: '1.4.2',
+    tags: ['OTT Platforms', 'Catalog', 'Popular'],
+    icon: '🎬'
+  },
+  {
+    id: 'mediafusion',
+    name: 'MediaFusion Multi-Engine',
+    description: 'Comprehensive scraper covering live TV streams, sports events, international film releases, and series.',
+    manifestUrl: 'https://mediafusion.elfhosted.com/manifest.json',
+    version: '3.9.1',
+    tags: ['Live Events', 'Scraper', 'Multi-Language'],
+    icon: '🛰️'
+  },
+  {
+    id: 'comet',
+    name: 'Comet Fast Scraper',
+    description: 'High-speed torrent and Debrid indexer with sub-second response times and multi-resolution stream filtering.',
+    manifestUrl: 'https://comet.elfhosted.com/manifest.json',
+    version: '1.2.0',
+    tags: ['Ultra-Fast', 'Debrid', 'HDR/DV'],
+    icon: '☄️'
+  },
+  {
+    id: 'opensubtitles',
+    name: 'OpenSubtitles v3 (Official)',
+    description: 'Official multi-language subtitle provider for Stremio with automated synchronization and language filtering.',
+    manifestUrl: 'https://opensubtitles-v3.strem.io/manifest.json',
+    version: '1.0.0',
+    tags: ['Subtitles', 'Multi-Language', 'Official'],
+    icon: '💬'
+  },
+  {
+    id: 'cinemeta',
+    name: 'Cinemeta Catalog (Official)',
+    description: 'Official Cinemeta metadata provider supplying accurate IMDB ratings, posters, cast information, and episode listings.',
+    manifestUrl: 'https://v3-cinemeta.strem.io/manifest.json',
+    version: '3.0.12',
+    tags: ['Metadata', 'IMDB Mappings', 'Official'],
+    icon: '🍿'
+  },
+  {
+    id: 'anime-kitsu',
+    name: 'Anime Kitsu Catalog',
+    description: 'Complete Anime series, movies, and OVAs catalog sourced from Kitsu.io with Japanese audio and subtitle feeds.',
+    manifestUrl: 'https://anime-kitsu.strem.fun/manifest.json',
+    version: '1.0.4',
+    tags: ['Anime', 'Kitsu.io', 'Japanese/Sub'],
+    icon: '🎌'
+  }
+];
+
+/**
+ * Probes the network latency (RTT) of an endpoint in milliseconds
+ * @param {string} url - Manifest or origin URL to test
+ * @returns {Promise<{status: 'ok'|'error', ms: number, error?: string}>}
+ */
+export async function probeEndpointLatency(url) {
+  if (!url) return { status: 'error', ms: 0, error: 'Empty URL' };
+  const startTime = performance.now();
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500); // 3.5s timeout
+    const res = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json, text/html, */*' }
+    });
+    clearTimeout(timer);
+    const ms = Math.round(performance.now() - startTime);
+    if (res.ok || res.status === 304 || res.status === 200) {
+      return { status: 'ok', ms };
+    }
+    return { status: 'ok', ms, error: `HTTP ${res.status}` };
+  } catch (err) {
+    const ms = Math.round(performance.now() - startTime);
+    if (err.name === 'AbortError') {
+      return { status: 'error', ms, error: 'Timeout (>3.5s)' };
+    }
+    return { status: 'error', ms, error: err.message || 'CORS/Blocked' };
+  }
+}
+
