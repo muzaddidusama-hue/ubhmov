@@ -456,3 +456,96 @@ export async function probeEndpointLatency(url) {
   }
 }
 
+/**
+ * Catalog Channels configuration for Stremio video stream feeds
+ */
+export const STREMIO_CATALOG_CHANNELS = [
+  {
+    id: 'movie_top',
+    name: 'Top Stremio Movies',
+    type: 'movie',
+    icon: '🍿',
+    endpoint: 'https://v3-cinemeta.strem.io/catalog/movie/top.json',
+    description: 'Trending and top-rated movies indexed across Stremio manifests'
+  },
+  {
+    id: 'series_top',
+    name: 'Popular Series',
+    type: 'tv',
+    icon: '📺',
+    endpoint: 'https://v3-cinemeta.strem.io/catalog/series/top.json',
+    description: 'Top-rated TV series with multi-season stream options'
+  },
+  {
+    id: 'cyberflix_netflix',
+    name: 'Netflix Feeds',
+    type: 'movie',
+    icon: '🎬',
+    endpoint: 'https://cyberflix.elfhosted.com/c/catalogs/catalog/movie/netflix.json',
+    description: 'Curated Netflix library streams fetched via CyberFlix'
+  },
+  {
+    id: 'cyberflix_apple',
+    name: 'Apple TV+ Originals',
+    type: 'movie',
+    icon: '🍏',
+    endpoint: 'https://cyberflix.elfhosted.com/c/catalogs/catalog/movie/apple.json',
+    description: 'Apple TV+ exclusive cinema streams'
+  }
+];
+
+/**
+ * Fetch video meta items from a Stremio catalog channel
+ * @param {string} channelId - e.g. 'movie_top', 'series_top', 'cyberflix_netflix'
+ * @returns {Promise<Array>} List of standardized movie/series items
+ */
+export async function fetchStremioCatalog(channelId = 'movie_top') {
+  const channel = STREMIO_CATALOG_CHANNELS.find(c => c.id === channelId) || STREMIO_CATALOG_CHANNELS[0];
+  const url = channel.endpoint;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000); // 6s timeout
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const metas = data && Array.isArray(data.metas) ? data.metas : [];
+
+    return metas.map(meta => {
+      const type = (meta.type === 'series' || meta.type === 'tv') ? 'tv' : 'movie';
+      const poster = meta.poster || 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster';
+      return {
+        id: meta.id,
+        imdb_id: meta.id,
+        title: meta.name || 'Untitled',
+        name: meta.name || 'Untitled',
+        type: type,
+        media_type: type,
+        poster: poster,
+        poster_path: null,
+        posterUrl: poster,
+        backdrop_path: meta.background || null,
+        vote_average: meta.imdbRating ? parseFloat(meta.imdbRating) : 7.8,
+        release_date: meta.releaseInfo || (meta.year ? String(meta.year) : ''),
+        first_air_date: meta.releaseInfo || (meta.year ? String(meta.year) : ''),
+        overview: meta.description || 'Streamable via Stremio add-on engines.',
+        genres: Array.isArray(meta.genres) ? meta.genres : [],
+        isStremioStream: true,
+        sourceEngine: 'Stremio Add-on'
+      };
+    });
+  } catch (err) {
+    console.warn(`Failed to fetch Stremio catalog for channel ${channelId}:`, err);
+    return [];
+  }
+}
+
+

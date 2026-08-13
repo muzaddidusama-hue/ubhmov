@@ -16,7 +16,8 @@ import {
   getStremioAddons,
   installStremioAddon,
   removeStremioAddon,
-  toggleStremioAddon
+  toggleStremioAddon,
+  POPULAR_STREMIO_ADDONS_PRESETS
 } from './utils/apiManager.js';
 
 // ==========================================================================
@@ -292,16 +293,15 @@ async function loadHomeFeeds() {
       createCarouselComponent('Now in Theatres', nowPlaying.results || [], 'movie', handleInfoClick)
     );
 
-    // 5. Stremio Add-ons & Streaming Servers Hub Section
+    // 5. Stremio Add-ons Video Streams & Play Showcase Section
     const stremioSectionContainer = document.getElementById('section-stremio-servers');
     if (stremioSectionContainer) {
       stremioSectionContainer.innerHTML = '';
       stremioSectionContainer.appendChild(
         createStremioServersSection({
-          onOpenServerModal: (srv) => openServerModal(srv),
-          onOpenStremioModal: () => openStremioModal(),
-          showToast: (msg, type) => showToast(msg, type),
-          syncCloud: () => syncAdminConfigToCloud()
+          onWatchClick: (id, type) => handleWatchClick(id, type),
+          onInfoClick: (id, type) => handleInfoClick(id, type),
+          showToast: (msg, type) => showToast(msg, type)
         })
       );
     }
@@ -1418,6 +1418,60 @@ function renderAdminStremioList() {
     };
 
     container.appendChild(card);
+  });
+
+  // Render Community Presets Section inside Admin Console
+  const presetsWrapper = document.createElement('div');
+  presetsWrapper.style.cssText = 'grid-column: 1 / -1; margin-top: 2rem; border-top: 1px solid var(--border-glass); padding-top: 1.5rem;';
+  presetsWrapper.innerHTML = `
+    <h4 style="font-family:var(--font-secondary); font-size:1.05rem; font-weight:700; color:var(--text-high); margin-bottom:0.35rem;">Recommended Community Add-ons</h4>
+    <p style="font-size:0.8rem; color:var(--text-med); margin-bottom:1.25rem;">Install popular community scrapers, subtitle engines, and catalogs with one click.</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1rem;" id="admin-stremio-presets-grid"></div>
+  `;
+  container.appendChild(presetsWrapper);
+
+  const presetsGrid = presetsWrapper.querySelector('#admin-stremio-presets-grid');
+  const installedIds = new Set(addons.map(a => a.id));
+
+  POPULAR_STREMIO_ADDONS_PRESETS.forEach(preset => {
+    const isInstalled = installedIds.has(preset.id);
+    const pCard = document.createElement('div');
+    pCard.style.cssText = 'background:rgba(255,255,255,0.02); border:1px solid var(--border-glass); border-radius:12px; padding:1rem; display:flex; flex-direction:column; justify-content:space-between; gap:0.75rem;';
+    
+    pCard.innerHTML = `
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+          <h5 style="font-size:0.9rem; font-weight:700; color:var(--text-high);">${escapeHTML(preset.name)}</h5>
+          <span style="font-size:0.65rem; color:var(--accent-cyan); background:rgba(0,242,254,0.1); padding:0.1rem 0.35rem; border-radius:4px;">v${escapeHTML(preset.version)}</span>
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-med); line-height:1.4;">${escapeHTML(preset.description)}</p>
+      </div>
+      <div>
+        ${isInstalled ? `
+          <button class="action-badge-btn approved" style="width:100%; text-align:center; padding:0.4rem;" disabled>✓ Installed</button>
+        ` : `
+          <button class="action-badge-btn install-preset-btn" style="width:100%; text-align:center; padding:0.4rem; color:var(--accent-cyan); border-color:rgba(0,242,254,0.3);">+ 1-Click Install</button>
+        `}
+      </div>
+    `;
+
+    pCard.querySelector('.install-preset-btn')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'Installing...';
+      try {
+        const inst = await installStremioAddon(preset.manifestUrl);
+        showToast(`Installed "${inst.name}"!`, 'success');
+        renderAdminStremioList();
+        syncAdminConfigToCloud();
+      } catch (err) {
+        showToast('Install failed: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '+ 1-Click Install';
+      }
+    });
+
+    presetsGrid?.appendChild(pCard);
   });
 }
 

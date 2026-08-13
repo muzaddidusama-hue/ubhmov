@@ -170,9 +170,28 @@ export const tmdb = {
 
   // Get Details (Movie or TV)
   getDetails: async (id, type) => {
+    // If ID is an IMDB ID (starts with tt...), resolve via /find endpoint first
+    if (typeof id === 'string' && id.startsWith('tt')) {
+      try {
+        const findRes = await tmdbFetch(`/find/${id}`, { external_source: 'imdb_id', language: 'en-US' });
+        const match = (findRes.movie_results && findRes.movie_results[0]) ||
+                      (findRes.tv_results && findRes.tv_results[0]);
+        if (match) {
+          const resolvedType = match.title ? 'movie' : 'tv';
+          return tmdbFetch(`/${resolvedType}/${match.id}`, { append_to_response: 'credits,videos', language: 'en-US' });
+        }
+      } catch (e) {
+        console.warn('Could not resolve IMDB ID via TMDB find:', e);
+      }
+    }
     const endpoint = `/${type}/${id}`;
     // Append credits and videos (trailers) in one request
     return tmdbFetch(endpoint, { append_to_response: 'credits,videos', language: 'en-US' });
+  },
+
+  // Find by external ID (e.g. imdb_id)
+  findFromExternalId: async (externalId, externalSource = 'imdb_id') => {
+    return tmdbFetch(`/find/${externalId}`, { external_source: externalSource, language: 'en-US' });
   },
 
   // Get TV Season details (for episodes)
