@@ -539,20 +539,20 @@ export function getActiveAddonCatalogFeeds() {
         const catId = cat.id || 'top';
         const icon = catType === 'movie' ? '🍿' : (catType === 'series' || catType === 'tv' ? '📺' : '🎬');
         feeds.push({
-          feedId: `${addon.id}_${catType}_${catId}`,
+          feedId: `${addon.id}_${catType}_${catId}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
           addonId: addon.id,
           addonName: addon.name,
           catalogType: catType === 'series' ? 'tv' : catType,
           catalogId: catId,
-          catalogName: cat.name ? `${addon.name} - ${cat.name}` : `${addon.name} ${catType}`,
+          catalogName: cat.name ? `${addon.name} - ${cat.name}` : `${addon.name} - ${catType} ${catId}`,
           endpoint: `${baseUrl}/catalog/${catType}/${catId}.json`,
           icon: icon
         });
       });
-    } else if (addon.id === 'cinemeta' || (addon.resources && (addon.resources.includes('meta') || addon.resources.includes('catalog')))) {
-      // Default Cinemeta/meta catalogs fallback
+    } else if (addon.id === 'cinemeta') {
+      // Cinemeta default catalogs
       feeds.push({
-        feedId: `${addon.id}_movie_top`,
+        feedId: 'cinemeta_movie_top',
         addonId: addon.id,
         addonName: addon.name,
         catalogType: 'movie',
@@ -562,7 +562,7 @@ export function getActiveAddonCatalogFeeds() {
         icon: '🍿'
       });
       feeds.push({
-        feedId: `${addon.id}_series_top`,
+        feedId: 'cinemeta_series_top',
         addonId: addon.id,
         addonName: addon.name,
         catalogType: 'tv',
@@ -578,31 +578,56 @@ export function getActiveAddonCatalogFeeds() {
 }
 
 /**
- * Fetch video items from a specific Stremio catalog feed
+ * Fetch video items from a specific Stremio catalog feed with direct & CORS proxy fallback
  * @param {Object} feed - Feed descriptor
  * @returns {Promise<Array>} List of standardized movie/series items
  */
 export async function fetchStremioFeedItems(feed) {
   if (!feed || !feed.endpoint) return [];
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000); // 6s timeout
-    const res = await fetch(feed.endpoint, {
-      signal: controller.signal,
-      headers: { 'Accept': 'application/json' }
-    });
-    clearTimeout(timeout);
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+  const fetchWithFallback = async (url) => {
+    // 1. Direct fetch with timeout
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      // Direct fetch failed or CORS restricted
     }
 
-    const data = await res.json();
+    // 2. CORS Proxy Fallback
+    try {
+      const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(proxyUrl, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      // Proxy failed
+    }
+
+    return null;
+  };
+
+  try {
+    const data = await fetchWithFallback(feed.endpoint);
     const metas = data && Array.isArray(data.metas) ? data.metas : [];
 
     return metas.map(meta => {
-      const type = (meta.type === 'series' || meta.type === 'tv') ? 'tv' : 'movie';
+      const type = (meta.type === 'series' || meta.type === 'tv') ? 'tv' : (meta.type === 'other' ? 'movie' : (meta.type || 'movie'));
       
       // Stremio's native Metahub poster and backdrop CDN resolution
       let poster = meta.poster;
@@ -626,8 +651,8 @@ export async function fetchStremioFeedItems(feed) {
       return {
         id: meta.id,
         imdb_id: meta.id,
-        title: meta.name || 'Untitled',
-        name: meta.name || 'Untitled',
+        title: meta.name || meta.title || 'Untitled',
+        name: meta.name || meta.title || 'Untitled',
         type: type,
         media_type: type,
         poster: poster,

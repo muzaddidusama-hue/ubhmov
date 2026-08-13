@@ -193,32 +193,48 @@ export function createStremioServersSection(callbacks = {}) {
   }
 
   async function loadAllFeedCarousels(feeds) {
-    feeds.forEach(async (feed) => {
+    let activeRenderedCount = 0;
+    const allFeedsContainer = sectionWrapper.querySelector('#stremio-all-feeds-container');
+
+    const feedPromises = feeds.map(async (feed) => {
+      const feedSec = sectionWrapper.querySelector(`#feed-sec-${feed.feedId}`);
       const carousel = sectionWrapper.querySelector(`#carousel-${feed.feedId}`);
-      if (!carousel) return;
+      const jumpPill = sectionWrapper.querySelector(`a[href="#feed-sec-${feed.feedId}"]`);
+      if (!carousel || !feedSec) return;
 
       try {
         const items = await fetchStremioFeedItems(feed);
-        renderFeedCards(items, carousel, feed);
+        if (items && items.length > 0) {
+          renderFeedCards(items, carousel, feed);
+          activeRenderedCount++;
+        } else {
+          feedSec.remove();
+          jumpPill?.remove();
+        }
       } catch (err) {
-        carousel.innerHTML = `
-          <div style="padding: 1.5rem; color: #ef4444; font-size: 0.85rem;">
-            Failed to load items: ${escapeHTML(err.message)}
-          </div>
-        `;
+        feedSec.remove();
+        jumpPill?.remove();
       }
     });
+
+    await Promise.all(feedPromises);
+
+    if (activeRenderedCount === 0 && allFeedsContainer && allFeedsContainer.children.length === 0) {
+      allFeedsContainer.innerHTML = `
+        <div class="hub-empty-state" style="padding: 2.5rem 1.5rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border-glass); border-radius: 14px;">
+          <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-high); margin-bottom: 0.4rem;">Stream Scrapers Ready</h4>
+          <p style="color: var(--text-med); font-size: 0.85rem; max-width: 500px; margin: 0 auto; line-height: 1.5;">
+            Your running Stremio add-ons are configured for direct stream scraping. Enter any IMDB ID (e.g. <code>tt10872600</code>) in the launcher above to play directly.
+          </p>
+        </div>
+      `;
+    }
   }
 
   function renderFeedCards(items, container, feed) {
     container.innerHTML = '';
 
     if (!items || items.length === 0) {
-      container.innerHTML = `
-        <div style="padding: 1.5rem 1rem; color: var(--text-muted); font-size: 0.82rem;">
-          No titles found in this feed.
-        </div>
-      `;
       return;
     }
 
