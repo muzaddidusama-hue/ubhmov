@@ -193,48 +193,45 @@ export function createStremioServersSection(callbacks = {}) {
   }
 
   async function loadAllFeedCarousels(feeds) {
-    let activeRenderedCount = 0;
-    const allFeedsContainer = sectionWrapper.querySelector('#stremio-all-feeds-container');
-
-    const feedPromises = feeds.map(async (feed) => {
-      const feedSec = sectionWrapper.querySelector(`#feed-sec-${feed.feedId}`);
+    feeds.forEach(async (feed) => {
       const carousel = sectionWrapper.querySelector(`#carousel-${feed.feedId}`);
-      const jumpPill = sectionWrapper.querySelector(`a[href="#feed-sec-${feed.feedId}"]`);
-      if (!carousel || !feedSec) return;
+      if (!carousel) return;
 
       try {
         const items = await fetchStremioFeedItems(feed);
-        if (items && items.length > 0) {
-          renderFeedCards(items, carousel, feed);
-          activeRenderedCount++;
-        } else {
-          feedSec.remove();
-          jumpPill?.remove();
-        }
+        renderFeedCards(items, carousel, feed);
       } catch (err) {
-        feedSec.remove();
-        jumpPill?.remove();
+        renderFeedCards([], carousel, feed);
       }
     });
-
-    await Promise.all(feedPromises);
-
-    if (activeRenderedCount === 0 && allFeedsContainer && allFeedsContainer.children.length === 0) {
-      allFeedsContainer.innerHTML = `
-        <div class="hub-empty-state" style="padding: 2.5rem 1.5rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border-glass); border-radius: 14px;">
-          <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-high); margin-bottom: 0.4rem;">Stream Scrapers Ready</h4>
-          <p style="color: var(--text-med); font-size: 0.85rem; max-width: 500px; margin: 0 auto; line-height: 1.5;">
-            Your running Stremio add-ons are configured for direct stream scraping. Enter any IMDB ID (e.g. <code>tt10872600</code>) in the launcher above to play directly.
-          </p>
-        </div>
-      `;
-    }
   }
 
   function renderFeedCards(items, container, feed) {
     container.innerHTML = '';
 
     if (!items || items.length === 0) {
+      container.innerHTML = `
+        <div class="stremio-empty-feed-card" style="padding: 1.25rem 1.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 1.5rem; margin: 0.5rem 0;">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <span style="font-size: 1.6rem;">${feed.icon || '⚡'}</span>
+            <div>
+              <div style="font-weight: 700; color: var(--text-high); font-size: 0.95rem;">${escapeHTML(feed.catalogName)}</div>
+              <div style="font-size: 0.78rem; color: var(--text-med); margin-top: 0.2rem;">Live stream scraper engine active. Enter an IMDB ID or title to stream directly.</div>
+            </div>
+          </div>
+          <button class="primary-btn accent-glow-btn direct-feed-stream-btn" style="padding: 0.45rem 1rem; font-size: 0.8rem; white-space: nowrap;">
+            ▶ Direct Stream
+          </button>
+        </div>
+      `;
+
+      container.querySelector('.direct-feed-stream-btn')?.addEventListener('click', () => {
+        const input = sectionWrapper.querySelector('#stremio-direct-query-input');
+        if (input) {
+          input.focus();
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
       return;
     }
 

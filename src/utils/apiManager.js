@@ -692,6 +692,15 @@ export async function fetchStremioFeedItems(feed) {
     if ((!data || !Array.isArray(data.metas) || data.metas.length === 0) && feed.fallbackEndpoint) {
       data = await fetchWithFallback(feed.fallbackEndpoint);
     }
+    if (!data || !Array.isArray(data.metas) || data.metas.length === 0) {
+      const baseUrl = feed.endpoint.substring(0, feed.endpoint.indexOf('/catalog/'));
+      if (baseUrl) {
+        data = await fetchWithFallback(`${baseUrl}/catalog/${feed.rawType}/${feed.catalogId}/genre=All.json`);
+        if (!data || !Array.isArray(data.metas) || data.metas.length === 0) {
+          data = await fetchWithFallback(`${baseUrl}/catalog/${feed.rawType}/${feed.catalogId}/genre=All/skip=0.json`);
+        }
+      }
+    }
 
     const metas = data && Array.isArray(data.metas) ? data.metas : [];
 
