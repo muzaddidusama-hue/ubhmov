@@ -340,34 +340,67 @@ export async function fetchStremioStreams(imdbId, type = 'movie', season = 1, ep
 
   const results = [];
 
+  const tryFetch = async (url) => {
+    // 1. Direct attempt
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 6000);
+      const res = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+      clearTimeout(t);
+      if (res.ok) return res.json();
+    } catch (_) {}
+    // 2. CORS proxy fallback
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 7000);
+      const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`, {
+        signal: ctrl.signal, headers: { Accept: 'application/json' }
+      });
+      clearTimeout(t);
+      if (res.ok) return res.json();
+    } catch (_) {}
+    return null;
+  };
+
   for (const addon of streamAddons) {
     try {
       const baseUrl = addon.manifestUrl.replace(/\/manifest\.json$/i, '');
       const endpoint = `${baseUrl}/stream/${streamType}/${encodeURIComponent(queryId)}.json`;
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+      const data = await tryFetch(endpoint);
 
-      const res = await fetch(endpoint, { signal: controller.signal });
-      clearTimeout(timeoutId);
+      if (data && Array.isArray(data.streams)) {
+        data.streams.forEach((s, idx) => {
+          const hasDirectUrl = s.url && (
+            s.url.startsWith('http://') || s.url.startsWith('https://')
+          );
+          const hasTorrent = !!s.infoHash;
+          const hasExternal = !!s.externalUrl;
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data && Array.isArray(data.streams)) {
-          data.streams.forEach((s, idx) => {
-            results.push({
-              addonId: addon.id,
-              addonName: addon.name,
-              name: s.name || addon.name,
-              title: s.title || s.name || `Stream ${idx + 1}`,
-              url: s.url || '',
-              externalUrl: s.externalUrl || '',
-              infoHash: s.infoHash || '',
-              fileIdx: s.fileIdx,
-              behaviorHints: s.behaviorHints || {}
-            });
+          // Build a human-readable label
+          const quality = s.name || s.title || `Stream ${idx + 1}`;
+          const sizeInfo = s.behaviorHints?.filename ? ` · ${s.behaviorHints.filename.substring(0, 40)}` : '';
+          
+          // Build Stremio web player URL for torrent streams
+          let stremioWebUrl = null;
+          if (hasTorrent) {
+            // Stremio web player deep link
+            stremioWebUrl = `https://web.stremio.com/#/player/${encodeURIComponent(`${imdbId}`)}/${encodeURIComponent(streamType)}/${encodeURIComponent(imdbId)}/${season}/${episode}`;
+          }
+
+          results.push({
+            addonId: addon.id,
+            addonName: addon.name,
+            name: quality,
+            title: `${quality}${sizeInfo}`,
+            label: `[${addon.name.substring(0,15)}] ${quality}${sizeInfo}`,
+            url: hasDirectUrl ? s.url : '',         // Direct HTTP stream (playable in <video>)
+            externalUrl: hasExternal ? s.externalUrl : (stremioWebUrl || ''), // Fallback
+            infoHash: s.infoHash || '',
+            fileIdx: s.fileIdx,
+            isTorrent: hasTorrent && !hasDirectUrl,  // True = can't play in browser directly
+            behaviorHints: s.behaviorHints || {}
           });
-        }
+        });
       }
     } catch (err) {
       console.warn(`Failed to fetch streams from Stremio addon ${addon.name}:`, err);
@@ -376,6 +409,7 @@ export async function fetchStremioStreams(imdbId, type = 'movie', season = 1, ep
 
   return results;
 }
+
 
 /**
  * Community Recommended Stremio Addons Presets for 1-Click Installation

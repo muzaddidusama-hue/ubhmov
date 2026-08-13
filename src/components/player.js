@@ -102,7 +102,8 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
       stremioStreamsList.forEach((st, idx) => {
         const opt = document.createElement('option');
         opt.value = `stremio_${idx}`;
-        opt.textContent = `${st.addonName}: ${st.title}`;
+        const torrentTag = st.isTorrent ? '🧲 ' : '▶ ';
+        opt.textContent = `${torrentTag}[${(st.addonName || '').substring(0, 12)}] ${st.title || st.name}`;
         if (opt.value === savedServer) opt.selected = true;
         stremioGroup.appendChild(opt);
       });
@@ -118,17 +119,49 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
     const selectedServer = serverSelect ? serverSelect.value : fallbackId;
     localStorage.setItem('selected_stream_server', selectedServer);
 
-    // Check if selected option is a Stremio direct stream
+    // Check if selected option is a Stremio stream
     if (selectedServer.startsWith('stremio_')) {
       const streamIdx = parseInt(selectedServer.replace('stremio_', ''));
       const stremioItem = stremioStreamsList[streamIdx];
       if (stremioItem) {
-        if (stremioItem.url) {
+        // Direct HTTP stream — play in HTML5 video element
+        if (stremioItem.url && (stremioItem.url.startsWith('http://') || stremioItem.url.startsWith('https://'))) {
           const directUrl = isProxyActive() ? proxifyUrl(stremioItem.url) : stremioItem.url;
           loadDirectVideo(directUrl);
           return;
-        } else if (stremioItem.externalUrl) {
+        }
+        // External/iframe-able URL
+        if (stremioItem.externalUrl && stremioItem.externalUrl.startsWith('http')) {
           loadIframe(stremioItem.externalUrl);
+          return;
+        }
+        // Torrent stream — can't play in browser, show Stremio launcher card
+        if (stremioItem.isTorrent || stremioItem.infoHash) {
+          const imdbIdLocal = item.imdb_id || item.external_ids?.imdb_id || '';
+          const streamTypeLocal = type === 'tv' ? 'series' : 'movie';
+          const stremioWebUrl = `https://web.stremio.com/#/detail/${streamTypeLocal}/${imdbIdLocal}`;
+          iframeRoot.innerHTML = `
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1.5rem;padding:2rem;text-align:center;background:#0a0b0f;border-radius:14px;">
+              <div style="font-size:3rem;">🧲</div>
+              <div style="color:#fff;font-size:1.1rem;font-weight:700;">Torrent Stream Found</div>
+              <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;max-width:420px;line-height:1.6;">
+                This stream (<strong style="color:#00f2fe;">${stremioItem.addonName}</strong>) is a torrent/magnet link. 
+                Browsers can't play torrents directly. Open it in the Stremio app or Stremio Web to stream instantly.
+              </div>
+              <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;">
+                <a href="${stremioWebUrl}" target="_blank" rel="noopener" 
+                   style="background:linear-gradient(135deg,#00f2fe,#4facfe);color:#000;font-weight:700;padding:0.65rem 1.5rem;border-radius:8px;text-decoration:none;font-size:0.9rem;">
+                  ▶ Open in Stremio Web
+                </a>
+                ${stremioItem.infoHash ? `
+                <a href="magnet:?xt=urn:btih:${stremioItem.infoHash}" 
+                   style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-weight:600;padding:0.65rem 1.5rem;border-radius:8px;text-decoration:none;font-size:0.9rem;">
+                  🧲 Copy Magnet
+                </a>` : ''}
+              </div>
+              <div style="color:rgba(255,255,255,0.35);font-size:0.75rem;">Quality: ${stremioItem.title || stremioItem.name}</div>
+            </div>
+          `;
           return;
         }
       }
