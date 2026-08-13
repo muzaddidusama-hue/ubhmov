@@ -603,7 +603,26 @@ export async function fetchStremioFeedItems(feed) {
 
     return metas.map(meta => {
       const type = (meta.type === 'series' || meta.type === 'tv') ? 'tv' : 'movie';
-      const poster = meta.poster || 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster';
+      
+      // Stremio's native Metahub poster and backdrop CDN resolution
+      let poster = meta.poster;
+      if (!poster || typeof poster !== 'string' || !poster.startsWith('http')) {
+        if (meta.id && String(meta.id).startsWith('tt')) {
+          poster = `https://images.metahub.space/poster/medium/${meta.id}/img`;
+        } else {
+          poster = 'https://images.metahub.space/poster/medium/tt0000000/img';
+        }
+      }
+
+      let background = meta.background;
+      if (!background || typeof background !== 'string' || !background.startsWith('http')) {
+        if (meta.id && String(meta.id).startsWith('tt')) {
+          background = `https://images.metahub.space/background/medium/${meta.id}/img`;
+        } else {
+          background = null;
+        }
+      }
+
       return {
         id: meta.id,
         imdb_id: meta.id,
@@ -614,7 +633,8 @@ export async function fetchStremioFeedItems(feed) {
         poster: poster,
         poster_path: null,
         posterUrl: poster,
-        backdrop_path: meta.background || null,
+        backdrop: background,
+        backdrop_path: background,
         vote_average: meta.imdbRating ? parseFloat(meta.imdbRating) : 7.8,
         release_date: meta.releaseInfo || (meta.year ? String(meta.year) : ''),
         first_air_date: meta.releaseInfo || (meta.year ? String(meta.year) : ''),
@@ -628,6 +648,54 @@ export async function fetchStremioFeedItems(feed) {
     console.warn(`Failed to fetch Stremio feed for ${feed.catalogName}:`, err);
     return [];
   }
+}
+
+/**
+ * Fetches full metadata and posters directly from Stremio Cinemeta and Metahub without TMDB
+ * @param {string} type - 'movie' or 'series' / 'tv'
+ * @param {string} id - IMDB ID (e.g. 'tt0137523')
+ * @returns {Promise<Object|null>}
+ */
+export async function fetchStremioMeta(type, id) {
+  const stremioType = (type === 'tv' || type === 'series') ? 'series' : 'movie';
+  const url = `https://v3-cinemeta.strem.io/meta/${stremioType}/${id}.json`;
+  
+  try {
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data.meta) {
+      const m = data.meta;
+      const poster = m.poster || `https://images.metahub.space/poster/medium/${id}/img`;
+      const background = m.background || `https://images.metahub.space/background/medium/${id}/img`;
+      return {
+        id: m.id,
+        imdb_id: m.id,
+        title: m.name || 'Untitled',
+        name: m.name || 'Untitled',
+        poster: poster,
+        posterUrl: poster,
+        poster_path: null,
+        backdrop_path: background,
+        backdrop: background,
+        overview: m.description || '',
+        release_date: m.releaseInfo || (m.year ? String(m.year) : ''),
+        first_air_date: m.releaseInfo || (m.year ? String(m.year) : ''),
+        vote_average: m.imdbRating ? parseFloat(m.imdbRating) : 7.5,
+        runtime: m.runtime ? parseInt(m.runtime) : null,
+        genres: Array.isArray(m.genres) ? m.genres.map(g => typeof g === 'string' ? { id: g, name: g } : g) : [],
+        cast: Array.isArray(m.cast) ? m.cast.map(c => ({ name: c, character: '' })) : [],
+        credits: {
+          cast: Array.isArray(m.cast) ? m.cast.map(c => ({ name: c, character: '' })) : []
+        },
+        videos: { results: m.trailers || [] },
+        isStremioStream: true
+      };
+    }
+  } catch (err) {
+    console.warn('Cinemeta fetch notice:', err);
+  }
+  return null;
 }
 
 /**

@@ -227,7 +227,9 @@ export function createStremioServersSection(callbacks = {}) {
       card.className = 'movie-card stremio-stream-card';
 
       const title = escapeHTML(item.title || item.name || 'Untitled');
-      const posterUrl = sanitizeUrl(item.poster || item.posterUrl, 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster');
+      const imdbId = item.imdb_id || item.id || '';
+      const fallbackMetahub = imdbId.startsWith('tt') ? `https://images.metahub.space/poster/medium/${imdbId}/img` : 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster';
+      const posterUrl = sanitizeUrl(item.poster || item.posterUrl || fallbackMetahub, fallbackMetahub);
       const rating = escapeHTML(item.vote_average ? item.vote_average.toFixed(1) : '8.0');
       const releaseYear = escapeHTML((item.release_date || '').split('-')[0] || '');
       const type = item.type === 'tv' ? 'tv' : 'movie';
@@ -235,7 +237,12 @@ export function createStremioServersSection(callbacks = {}) {
 
       card.innerHTML = `
         <div class="card-poster-wrapper">
-          <img src="${posterUrl}" class="card-poster" alt="${title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster';">
+          <img src="${posterUrl}" 
+               class="card-poster" 
+               alt="${title}" 
+               loading="lazy" 
+               decoding="async" 
+               onerror="if (this.dataset.triedMetahub !== '1' && '${imdbId}') { this.dataset.triedMetahub = '1'; this.src='https://images.metahub.space/poster/medium/${imdbId}/img'; } else { this.onerror=null; this.src='https://images.metahub.space/poster/small/${imdbId || 'tt0000000'}/img'; }">
           <span class="card-badge stremio-badge">⚡ Stremio</span>
           <span class="card-badge card-type-badge">${typeBadge}</span>
 

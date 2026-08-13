@@ -16,9 +16,13 @@ export function populateDetailsModal(item, type, isBookmarked, onPlay, onBookmar
   
   const rawTitle = item.title || item.name || 'Untitled';
   const title = escapeHTML(rawTitle);
-  const rawBackdrop = tmdb.getImageUrl(item.backdrop_path, 'original') || tmdb.getImageUrl(item.poster_path, 'original');
+  const imdbId = item.imdb_id || (typeof item.id === 'string' && item.id.startsWith('tt') ? item.id : '');
+  const stremioPosterFallback = imdbId ? `https://images.metahub.space/poster/medium/${imdbId}/img` : '';
+  const stremioBackdropFallback = imdbId ? `https://images.metahub.space/background/medium/${imdbId}/img` : '';
+
+  const rawBackdrop = item.backdrop || (item.backdrop_path ? (item.backdrop_path.startsWith('http') ? item.backdrop_path : tmdb.getImageUrl(item.backdrop_path, 'original')) : null) || stremioBackdropFallback;
   const backdropUrl = sanitizeUrl(rawBackdrop, '');
-  const rawPoster = item.poster_path ? tmdb.getImageUrl(item.poster_path, 'w342') : 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster';
+  const rawPoster = item.poster || item.posterUrl || (item.poster_path ? (item.poster_path.startsWith('http') ? item.poster_path : tmdb.getImageUrl(item.poster_path, 'w342')) : null) || stremioPosterFallback || 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster';
   const posterUrl = sanitizeUrl(rawPoster, 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster');
   const rating = escapeHTML(item.vote_average ? item.vote_average.toFixed(1) : 'N/A');
   const releaseYear = escapeHTML((item.release_date || item.first_air_date || '').split('-')[0] || 'N/A');
@@ -71,7 +75,7 @@ export function populateDetailsModal(item, type, isBookmarked, onPlay, onBookmar
       <div class="modal-hero-overlay"></div>
       <div class="modal-hero-content">
         <div class="modal-poster">
-          <img src="${posterUrl}" alt="${title}">
+          <img src="${posterUrl}" alt="${title}" onerror="if (this.dataset.triedMetahub !== '1' && '${imdbId}') { this.dataset.triedMetahub = '1'; this.src='https://images.metahub.space/poster/medium/${imdbId}/img'; } else { this.onerror=null; this.src='https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster'; }">
         </div>
         <div class="modal-header-meta">
           <h2 class="modal-title">${title}</h2>

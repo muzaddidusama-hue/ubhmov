@@ -18,7 +18,8 @@ import {
   removeStremioAddon,
   toggleStremioAddon,
   POPULAR_STREMIO_ADDONS_PRESETS,
-  runAddonHealthAndCapabilityCheck
+  runAddonHealthAndCapabilityCheck,
+  fetchStremioMeta
 } from './utils/apiManager.js';
 import {
   isProxyActive,
@@ -873,7 +874,16 @@ async function handleInfoClick(id, type) {
   modal.classList.remove('hidden');
 
   try {
-    const itemDetails = await tmdb.getDetails(id, type);
+    let itemDetails = null;
+    try {
+      itemDetails = await tmdb.getDetails(id, type);
+    } catch (tmdbErr) {
+      if (typeof id === 'string' && id.startsWith('tt')) {
+        itemDetails = await fetchStremioMeta(type, id);
+      }
+      if (!itemDetails) throw tmdbErr;
+    }
+
     const isBookmarked = state.bookmarks.some(b => b.id === id && b.mediaType === type);
 
     populateDetailsModal(
