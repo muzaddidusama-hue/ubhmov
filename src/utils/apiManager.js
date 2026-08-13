@@ -111,6 +111,21 @@ export const DEFAULT_STREMIO_ADDONS = [
     isOfficial: false
   },
   {
+    id: 'onlyporn-addon',
+    name: '🔞 OnlyPorn Adult Video Streams',
+    description: 'Direct HD & 4K streams from Eporner, HQPorner, and major adult tube catalogs',
+    manifestUrl: 'https://onlyporn.elfhosted.com/manifest.json',
+    version: '1.2.0',
+    resources: ['stream', 'catalog', 'meta'],
+    types: ['movie', 'series', 'other'],
+    catalogs: [
+      { type: 'movie', id: 'eporner_top', name: 'Eporner Top Videos' }
+    ],
+    active: true,
+    isOfficial: false,
+    isNsfw: true
+  },
+  {
     id: 'opensubtitles',
     name: 'OpenSubtitles v3',
     description: 'Official multi-language subtitle provider for Stremio',
@@ -1464,6 +1479,80 @@ export function getCloudStreamRepos() {
   }
 }
 
+// Default pre-loaded CloudStream Plugins
+export const DEFAULT_CLOUDSTREAM_PLUGINS = [
+  {
+    id: 'cs_default_javhd',
+    repoId: 'cs_repo_cs3xxx',
+    repoName: '🔞 CS3XXX NSFW Providers',
+    name: 'JavHD Provider',
+    internalName: 'JavHD',
+    description: 'High definition JAV video streams and catalog',
+    version: 7,
+    authors: ['Jace'],
+    tvTypes: ['NSFW'],
+    isNsfw: true,
+    status: 1,
+    active: true
+  },
+  {
+    id: 'cs_default_javsub',
+    repoId: 'cs_repo_cs3xxx',
+    repoName: '🔞 CS3XXX NSFW Providers',
+    name: 'JavSub Provider',
+    internalName: 'JavSub',
+    description: 'High quality JAV with English subtitles',
+    version: 7,
+    authors: ['Jace'],
+    tvTypes: ['NSFW'],
+    isNsfw: true,
+    status: 1,
+    active: true
+  },
+  {
+    id: 'cs_default_pornhub',
+    repoId: 'cs_repo_cs3xxx',
+    repoName: '🔞 CS3XXX NSFW Providers',
+    name: 'Pornhub Provider',
+    internalName: 'Pornhub',
+    description: 'Top trending 4K & HD adult tube video streams',
+    version: 5,
+    authors: ['Stormunblessed', 'Jace'],
+    tvTypes: ['NSFW'],
+    isNsfw: true,
+    status: 1,
+    active: true
+  },
+  {
+    id: 'cs_default_xvideos',
+    repoId: 'cs_repo_cs3xxx',
+    repoName: '🔞 CS3XXX NSFW Providers',
+    name: 'Xvideos Provider',
+    internalName: 'Xvideos',
+    description: 'Best free NSFW video streams and top clips',
+    version: 8,
+    authors: ['Stormunblessed', 'Jace'],
+    tvTypes: ['NSFW'],
+    isNsfw: true,
+    status: 1,
+    active: true
+  },
+  {
+    id: 'cs_default_stormunblessed',
+    repoId: 'cs_repo_anime',
+    repoName: '🎌 Stormunblessed Anime',
+    name: 'Stormunblessed Anime',
+    internalName: 'Stormunblessed',
+    description: 'Trending anime series and sub/dub episodes',
+    version: 4,
+    authors: ['Stormunblessed'],
+    tvTypes: ['Anime'],
+    isAnime: true,
+    status: 1,
+    active: true
+  }
+];
+
 /**
  * Get all installed CloudStream extension plugins
  * @returns {Array}
@@ -1471,10 +1560,14 @@ export function getCloudStreamRepos() {
 export function getCloudStreamPlugins() {
   try {
     const saved = localStorage.getItem('cloudstream_plugins');
-    return saved ? JSON.parse(saved) : [];
-  } catch (_) {
-    return [];
-  }
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (_) {}
+  return DEFAULT_CLOUDSTREAM_PLUGINS;
 }
 
 /**
