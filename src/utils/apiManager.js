@@ -1336,6 +1336,14 @@ export async function runAddonHealthAndCapabilityCheck() {
 
 export const POPULAR_CLOUDSTREAM_REPOS_PRESETS = [
   {
+    id: 'cs-gizlikeyif-nsfw',
+    name: '🔞 Cs-GizliKeyif Multi-NSFW',
+    description: 'Massive adult extension repository with 35+ providers including 18EU, 3XChina, AdultDeepFakes, AdultTvChannels, Aki, MissAV, Pornhub, Xvideos, and more.',
+    url: 'https://raw.githubusercontent.com/Kraptor123/Cs-GizliKeyif/builds/plugins.json',
+    tags: ['Adult', 'NSFW', '35+ Providers', 'JAV/Tube'],
+    icon: '🔞'
+  },
+  {
     id: 'cs3xxx-nsfw',
     name: '🔞 CS3XXX NSFW Providers',
     description: 'Premier adult content extension repository featuring JavFree, JavGuru, JavHD, JavSub, Pornhub, Xvideos, and more.',
@@ -1384,9 +1392,24 @@ async function fetchCloudStreamJson(url) {
     }
   };
 
+  let targetUrl = url.trim();
+
+  // Normalize GitHub blob / tree / refs URLs to raw endpoints
+  const ghBlobMatch = targetUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)$/i);
+  if (ghBlobMatch) {
+    targetUrl = `https://raw.githubusercontent.com/${ghBlobMatch[1]}/${ghBlobMatch[2]}/${ghBlobMatch[3]}/${ghBlobMatch[4]}`;
+  }
+  const ghTreeMatch = targetUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/tree\/([^\/]+)$/i);
+  if (ghTreeMatch) {
+    targetUrl = `https://raw.githubusercontent.com/${ghTreeMatch[1]}/${ghTreeMatch[2]}/${ghTreeMatch[3]}/plugins.json`;
+  }
+  const ghRefsMatch = targetUrl.match(/raw\.githubusercontent\.com\/([^\/]+)\/([^\/]+)\/refs\/heads\/([^\/]+)\/(.+)$/i);
+  if (ghRefsMatch) {
+    targetUrl = `https://raw.githubusercontent.com/${ghRefsMatch[1]}/${ghRefsMatch[2]}/${ghRefsMatch[3]}/${ghRefsMatch[4]}`;
+  }
+
   // Special Handling for Codeberg URLs: Codeberg blocks direct raw downloads ("Codeberg is not a CDN"),
   // so we translate raw URLs to the Codeberg Contents API endpoint.
-  let targetUrl = url.trim();
   const codebergMatch = targetUrl.match(/codeberg\.org\/([^\/]+)\/([^\/]+)\/raw\/branch\/([^\/]+)\/(.+)$/i);
   if (codebergMatch) {
     const [, owner, repo, branch, filePath] = codebergMatch;
@@ -1571,9 +1594,9 @@ export function getCloudStreamPlugins() {
 }
 
 /**
- * Install or update a CloudStream repository by its repo.json URL.
- * Fetches the manifest, parses pluginLists, resolves plugins.json, and saves plugins.
- * @param {string} repoUrl - URL to repo.json
+ * Install or update a CloudStream repository by its repo.json or plugins.json URL.
+ * Supports repo.json with pluginLists, direct plugins.json arrays, and inline plugins objects.
+ * @param {string} repoUrl - URL to repo.json or plugins.json
  * @returns {Promise<{repo: Object, plugins: Array}>}
  */
 export async function installCloudStreamRepo(repoUrl) {
@@ -1581,70 +1604,124 @@ export async function installCloudStreamRepo(repoUrl) {
     throw new Error('Please provide a valid CloudStream repository URL.');
   }
 
-  const cleanUrl = repoUrl.trim();
+  let cleanUrl = repoUrl.trim();
+
+  // Normalize GitHub blob / tree / refs URLs to raw endpoints
+  const ghBlobMatch = cleanUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)$/i);
+  if (ghBlobMatch) {
+    cleanUrl = `https://raw.githubusercontent.com/${ghBlobMatch[1]}/${ghBlobMatch[2]}/${ghBlobMatch[3]}/${ghBlobMatch[4]}`;
+  }
+  const ghRefsMatch = cleanUrl.match(/raw\.githubusercontent\.com\/([^\/]+)\/([^\/]+)\/refs\/heads\/([^\/]+)\/(.+)$/i);
+  if (ghRefsMatch) {
+    cleanUrl = `https://raw.githubusercontent.com/${ghRefsMatch[1]}/${ghRefsMatch[2]}/${ghRefsMatch[3]}/${ghRefsMatch[4]}`;
+  }
+
   const repoData = await fetchCloudStreamJson(cleanUrl);
 
-  if (!repoData || typeof repoData !== 'object') {
+  if (!repoData || (typeof repoData !== 'object' && !Array.isArray(repoData))) {
     throw new Error('Invalid repository manifest format.');
   }
 
-  const repoName = repoData.name || 'CloudStream Extension Repo';
-  const repoDesc = repoData.description || 'CloudStream plugin repository';
-  const pluginLists = Array.isArray(repoData.pluginLists) ? repoData.pluginLists : [];
+  let repoName = 'CloudStream Extension Repo';
+  let repoDesc = 'CloudStream plugin repository';
+  let rawPluginsList = [];
+
   const repoId = `cs_repo_${Math.abs(cleanUrl.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0))}`;
 
-  // Fetch plugins from all pluginLists in parallel
-  const fetchedPlugins = [];
-  for (const listUrl of pluginLists) {
-    try {
-      const pluginsArray = await fetchCloudStreamJson(listUrl);
-      if (Array.isArray(pluginsArray)) {
-        pluginsArray.forEach(p => {
-          const pluginName = p.name || p.internalName || 'Unnamed Plugin';
-          const pId = `${repoId}_${(p.internalName || p.name || Math.random().toString(36).substring(7)).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-          
-          const types = Array.isArray(p.tvTypes) ? p.tvTypes : [];
-          const nameLower = pluginName.toLowerCase();
-          const isNsfw = types.some(t => typeof t === 'string' && (t.toLowerCase().includes('nsfw') || t.toLowerCase().includes('adult') || t.toLowerCase().includes('18+')))
-            || nameLower.includes('jav')
-            || nameLower.includes('porn')
-            || nameLower.includes('xvideo')
-            || nameLower.includes('nsfw')
-            || nameLower.includes('adult')
-            || nameLower.includes('hentai')
-            || nameLower.includes('vlxx')
-            || repoName.toLowerCase().includes('nsfw');
-          const isAnime = types.some(t => typeof t === 'string' && t.toLowerCase().includes('anime'))
-            || nameLower.includes('anime')
-            || nameLower.includes('kitsu')
-            || nameLower.includes('gogo')
-            || repoName.toLowerCase().includes('anime');
+  // CASE 1: The fetched file is directly an Array of plugins (e.g. plugins.json)
+  if (Array.isArray(repoData)) {
+    rawPluginsList = repoData;
+    const urlParts = cleanUrl.split('/');
+    const repoIndex = urlParts.indexOf('raw.githubusercontent.com') > -1 ? urlParts[urlParts.indexOf('raw.githubusercontent.com') + 2] : '';
+    const repoTitle = repoIndex ? decodeURIComponent(repoIndex) : (repoData[0]?.repositoryUrl ? 'Cs-GizliKeyif' : 'CloudStream Plugins');
+    repoName = `🔞 ${repoTitle}`;
+    repoDesc = `Collection of ${repoData.length} CloudStream plugins`;
+  } 
+  // CASE 2: The fetched file is a repo.json object
+  else if (typeof repoData === 'object') {
+    repoName = repoData.name || 'CloudStream Extension Repo';
+    repoDesc = repoData.description || 'CloudStream plugin repository';
 
-          fetchedPlugins.push({
-            id: pId,
-            repoId,
-            repoName,
-            name: pluginName,
-            internalName: p.internalName || pluginName,
-            description: p.description || '',
-            version: p.version || 1,
-            authors: Array.isArray(p.authors) ? p.authors : (p.authors ? [p.authors] : []),
-            tvTypes: types,
-            isNsfw,
-            isAnime,
-            status: p.status ?? 1, // 1 = operational, 2 = warning/slow, 3 = down
-            url: p.url || '',
-            repositoryUrl: p.repositoryUrl || cleanUrl,
-            iconUrl: p.iconUrl ? p.iconUrl.replace('%size%', '64') : '',
-            active: true,
-            installedAt: Date.now()
-          });
-        });
+    // If repoData has inline plugins array
+    if (Array.isArray(repoData.plugins)) {
+      rawPluginsList.push(...repoData.plugins);
+    }
+
+    // If repoData has pluginLists
+    const pluginLists = Array.isArray(repoData.pluginLists) ? repoData.pluginLists : [];
+    for (const listUrl of pluginLists) {
+      try {
+        let fullListUrl = listUrl;
+        if (!listUrl.startsWith('http://') && !listUrl.startsWith('https://')) {
+          fullListUrl = new URL(listUrl, cleanUrl).href;
+        }
+        const pluginsArray = await fetchCloudStreamJson(fullListUrl);
+        if (Array.isArray(pluginsArray)) {
+          rawPluginsList.push(...pluginsArray);
+        }
+      } catch (err) {
+        console.warn(`[cloudstream] Failed to load plugin list from ${listUrl}:`, err);
       }
-    } catch (err) {
-      console.warn(`[cloudstream] Failed to load plugin list from ${listUrl}:`, err);
     }
   }
+
+  // Parse and normalize all plugin entries
+  const fetchedPlugins = [];
+  const seenPluginIds = new Set();
+
+  rawPluginsList.forEach(p => {
+    const pluginName = p.name || p.internalName || 'Unnamed Plugin';
+    const internal = p.internalName || pluginName;
+    const pId = `${repoId}_${internal.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+
+    if (seenPluginIds.has(pId)) return;
+    seenPluginIds.add(pId);
+
+    const types = Array.isArray(p.tvTypes) ? p.tvTypes : [];
+    const nameLower = pluginName.toLowerCase();
+    const isNsfw = types.some(t => typeof t === 'string' && (t.toLowerCase().includes('nsfw') || t.toLowerCase().includes('adult') || t.toLowerCase().includes('18+')))
+      || nameLower.includes('jav')
+      || nameLower.includes('porn')
+      || nameLower.includes('xvideo')
+      || nameLower.includes('nsfw')
+      || nameLower.includes('adult')
+      || nameLower.includes('hentai')
+      || nameLower.includes('vlxx')
+      || nameLower.includes('3x')
+      || nameLower.includes('deepfake')
+      || nameLower.includes('stripchat')
+      || nameLower.includes('coomer')
+      || nameLower.includes('tushy')
+      || repoName.toLowerCase().includes('nsfw')
+      || repoName.toLowerCase().includes('gizlikeyif');
+      
+    const isAnime = types.some(t => typeof t === 'string' && t.toLowerCase().includes('anime'))
+      || nameLower.includes('anime')
+      || nameLower.includes('kitsu')
+      || nameLower.includes('gogo')
+      || nameLower.includes('anitaku')
+      || repoName.toLowerCase().includes('anime');
+
+    fetchedPlugins.push({
+      id: pId,
+      repoId,
+      repoName,
+      name: pluginName,
+      internalName: internal,
+      description: p.description || '',
+      version: p.version || 1,
+      authors: Array.isArray(p.authors) ? p.authors : (p.authors ? [p.authors] : []),
+      tvTypes: types.length > 0 ? types : (isNsfw ? ['NSFW'] : (isAnime ? ['Anime'] : ['Movie', 'TvSeries'])),
+      isNsfw,
+      isAnime,
+      status: p.status ?? 1,
+      url: p.url || '',
+      repositoryUrl: p.repositoryUrl || cleanUrl,
+      iconUrl: p.iconUrl ? p.iconUrl.replace('%size%', '64') : '',
+      active: true,
+      installedAt: Date.now()
+    });
+  });
 
   // Save Repository record
   const currentRepos = getCloudStreamRepos().filter(r => r.id !== repoId && r.url !== cleanUrl);
