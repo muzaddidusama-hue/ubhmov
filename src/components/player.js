@@ -1,6 +1,7 @@
 import { tmdb } from '../tmdb.js';
 import { escapeHTML } from '../utils/security.js';
 import { getActiveStreamServers, fetchStremioStreams } from '../utils/apiManager.js';
+import { isProxyActive, setProxyState, proxifyUrl, getCurrentProxyNode } from '../utils/proxyManager.js';
 
 /**
  * Initializes and manages the full-screen video player overlay.
@@ -123,7 +124,8 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
       const stremioItem = stremioStreamsList[streamIdx];
       if (stremioItem) {
         if (stremioItem.url) {
-          loadDirectVideo(stremioItem.url);
+          const directUrl = isProxyActive() ? proxifyUrl(stremioItem.url) : stremioItem.url;
+          loadDirectVideo(directUrl);
           return;
         } else if (stremioItem.externalUrl) {
           loadIframe(stremioItem.externalUrl);
@@ -175,6 +177,35 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
   const serverSelect = document.getElementById('player-server-select');
   if (serverSelect) {
     serverSelect.onchange = () => {
+      refreshPlayerUrl();
+    };
+  }
+
+  // Configure Player USA Proxy Button
+  const playerProxyBtn = document.getElementById('player-proxy-toggle-btn');
+  const playerProxyText = document.getElementById('player-proxy-text');
+
+  const updatePlayerProxyUI = () => {
+    const active = isProxyActive();
+    const node = getCurrentProxyNode();
+    if (playerProxyBtn) {
+      if (active) {
+        playerProxyBtn.classList.add('active');
+        if (playerProxyText) playerProxyText.textContent = `US Proxy: ON (${node.city})`;
+      } else {
+        playerProxyBtn.classList.remove('active');
+        if (playerProxyText) playerProxyText.textContent = 'US Proxy: OFF';
+      }
+    }
+  };
+
+  updatePlayerProxyUI();
+
+  if (playerProxyBtn) {
+    playerProxyBtn.onclick = () => {
+      const nextState = !isProxyActive();
+      setProxyState(nextState);
+      updatePlayerProxyUI();
       refreshPlayerUrl();
     };
   }
