@@ -81,6 +81,18 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
 
     serverSelect.innerHTML = '';
 
+    // CloudStream Direct Stream group (if item has embedUrl or directUrl)
+    if (item.embedUrl || item.directUrl || item.isCloudStream) {
+      const csGroup = document.createElement('optgroup');
+      csGroup.label = '☁️ CloudStream Plugin Stream';
+      const opt = document.createElement('option');
+      opt.value = 'cloudstream_direct';
+      opt.textContent = `▶ [${item.providerName || 'CloudStream'}] Embedded Stream`;
+      opt.selected = true;
+      csGroup.appendChild(opt);
+      serverSelect.appendChild(csGroup);
+    }
+
     // Standard Embed Servers group
     const embedGroup = document.createElement('optgroup');
     embedGroup.label = 'Web Embed Servers';
@@ -89,7 +101,7 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
       const opt = document.createElement('option');
       opt.value = srv.id;
       opt.textContent = srv.name;
-      if (srv.id === savedServer) opt.selected = true;
+      if (srv.id === savedServer && !item.embedUrl) opt.selected = true;
       embedGroup.appendChild(opt);
     });
     serverSelect.appendChild(embedGroup);
@@ -104,7 +116,7 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
         opt.value = `stremio_${idx}`;
         const torrentTag = st.isTorrent ? '🧲 ' : '▶ ';
         opt.textContent = `${torrentTag}[${(st.addonName || '').substring(0, 12)}] ${st.title || st.name}`;
-        if (opt.value === savedServer) opt.selected = true;
+        if (opt.value === savedServer && !item.embedUrl) opt.selected = true;
         stremioGroup.appendChild(opt);
       });
       serverSelect.appendChild(stremioGroup);
@@ -115,9 +127,21 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
   const refreshPlayerUrl = () => {
     const serverSelect = document.getElementById('player-server-select');
     const activeServers = getActiveStreamServers();
-    const fallbackId = activeServers[0]?.id || 'multiembed';
+    const fallbackId = (item.embedUrl || item.isCloudStream) ? 'cloudstream_direct' : (activeServers[0]?.id || 'multiembed');
     const selectedServer = serverSelect ? serverSelect.value : fallbackId;
     localStorage.setItem('selected_stream_server', selectedServer);
+
+    // Check if CloudStream direct embed/stream is active
+    if (selectedServer === 'cloudstream_direct' || (item.embedUrl && !selectedServer.startsWith('stremio_') && selectedServer !== 'multiembed' && !activeServers.some(s => s.id === selectedServer))) {
+      if (item.embedUrl) {
+        loadIframe(item.embedUrl);
+        return;
+      }
+      if (item.directUrl || item.streamUrl) {
+        loadDirectVideo(item.directUrl || item.streamUrl);
+        return;
+      }
+    }
 
     // Check if selected option is a Stremio stream
     if (selectedServer.startsWith('stremio_')) {

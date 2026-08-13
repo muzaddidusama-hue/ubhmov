@@ -1,13 +1,15 @@
 import {
   getStremioAddons,
   fetchLiveAddonCatalogItems,
+  getCloudStreamPlugins,
+  fetchLiveCloudStreamPluginItems,
   generateStremioTitlePoster
 } from '../utils/apiManager.js';
 import { escapeHTML, sanitizeUrl } from '../utils/security.js';
 
 /**
- * Creates the Stremio Multi-Addon Video Streaming Hub Component.
- * Renders dedicated video stream sections/carousels for all active & running Stremio add-ons.
+ * Creates the Multi-Addon & CloudStream Video Streaming Hub Component.
+ * Renders dedicated video stream sections/carousels for all active Stremio add-ons and CloudStream plugins.
  * @param {Object} callbacks - { onWatchClick, onInfoClick, showToast }
  * @returns {HTMLElement}
  */
@@ -21,20 +23,10 @@ export function createStremioServersSection(callbacks = {}) {
   const sectionWrapper = document.createElement('div');
   sectionWrapper.className = 'stremio-multi-addon-hub';
 
-  function renderSkeletonRow() {
-    return Array.from({ length: 6 }).map(() => `
-      <div class="stremio-stream-card skeleton-card">
-        <div class="card-poster-wrapper skeleton-pulse" style="aspect-ratio: 2/3; border-radius:14px;"></div>
-        <div style="padding: 0.75rem 0.25rem;">
-          <div class="skeleton-pulse" style="height:14px; width:75%; margin-bottom:6px; border-radius:4px;"></div>
-          <div class="skeleton-pulse" style="height:11px; width:45%; border-radius:4px;"></div>
-        </div>
-      </div>
-    `).join('');
-  }
-
   function renderShell() {
     const activeAddons = getStremioAddons().filter(a => a.active !== false);
+    const activePlugins = getCloudStreamPlugins().filter(p => p.active !== false);
+    const totalEngines = activeAddons.length + activePlugins.length;
 
     sectionWrapper.innerHTML = `
       <div class="stremio-video-section-container">
@@ -43,16 +35,16 @@ export function createStremioServersSection(callbacks = {}) {
           <div class="stremio-stream-title-group">
             <div class="stremio-hub-badge">
               <span class="stremio-hub-pulse-dot"></span>
-              <span>STREMIO LIVE ADDON ENGINES (${activeAddons.length} RUNNING)</span>
+              <span>LIVE STREAMING ENGINES (${totalEngines} ACTIVE: ${activeAddons.length} STREMIO + ${activePlugins.length} CLOUDSTREAM)</span>
             </div>
             <h2 class="stremio-stream-title">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="stremio-stream-icon">
                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
               </svg>
-              Stremio Add-on Video Streams
+              Add-on & CloudStream Video Streams
             </h2>
             <p class="stremio-stream-subtitle">
-              Fetching live catalogs directly from each installed add-on server in real time.
+              Live catalogs & streaming scrapers fetched directly from active Stremio add-ons and CloudStream extension plugins.
             </p>
           </div>
         </div>
@@ -63,7 +55,7 @@ export function createStremioServersSection(callbacks = {}) {
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="direct-stream-icon">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
-            <input type="text" id="stremio-direct-query-input" placeholder="Enter IMDB ID (e.g. tt10872600) to stream directly..." autocomplete="off">
+            <input type="text" id="stremio-direct-query-input" placeholder="Enter IMDB ID (e.g. tt10872600) or title to stream directly..." autocomplete="off">
             <button id="stremio-direct-enter-btn" class="hub-enter-key-btn" type="button" title="Click or Press Enter to stream">
               <span class="kbd-badge">↵ Enter</span>
             </button>
@@ -76,13 +68,13 @@ export function createStremioServersSection(callbacks = {}) {
           </button>
         </div>
 
-        <!-- Live Addon Carousels — injected by JS after manifest fetch -->
+        <!-- Live Addon & Plugin Carousels -->
         <div id="stremio-all-feeds-container" class="stremio-all-feeds-container">
-          ${activeAddons.length === 0
-            ? `<div class="hub-empty-state"><p style="color:var(--text-med);">No active Stremio add-ons found. Install add-ons in the Admin Console.</p></div>`
+          ${totalEngines === 0
+            ? `<div class="hub-empty-state"><p style="color:var(--text-med);">No active Stremio add-ons or CloudStream plugins found. Install plugins in the Admin Console.</p></div>`
             : `<div class="stremio-loading-state" style="display:flex;align-items:center;gap:1rem;padding:2rem 0;">
                 <span class="stremio-hub-pulse-dot"></span>
-                <span style="color:var(--text-med);font-size:0.9rem;">Fetching live catalogs from ${activeAddons.length} add-on server${activeAddons.length > 1 ? 's' : ''}...</span>
+                <span style="color:var(--text-med);font-size:0.9rem;">Fetching live catalogs and video feeds from ${totalEngines} streaming engine${totalEngines > 1 ? 's' : ''}...</span>
                </div>`
           }
         </div>
@@ -90,8 +82,8 @@ export function createStremioServersSection(callbacks = {}) {
     `;
 
     attachGlobalLauncherEvents();
-    if (activeAddons.length > 0) {
-      loadLiveAddonFeeds(activeAddons);
+    if (totalEngines > 0) {
+      loadLiveFeeds(activeAddons, activePlugins);
     }
   }
 
@@ -107,7 +99,7 @@ export function createStremioServersSection(callbacks = {}) {
         return;
       }
 
-      showToast(`Initiating Stremio stream for "${val}"...`, 'info');
+      showToast(`Initiating stream search for "${val}"...`, 'info');
       if (/^tt\d+/i.test(val)) {
         onWatchClick(val, 'movie');
       } else {
@@ -127,59 +119,67 @@ export function createStremioServersSection(callbacks = {}) {
     });
   }
 
-  function attachCarouselArrows() {
-    sectionWrapper.querySelectorAll('.stremio-row-prev').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const c = sectionWrapper.querySelector(`#${btn.getAttribute('data-target')}`);
-        if (c) c.scrollBy({ left: -c.clientWidth * 0.75, behavior: 'smooth' });
-      });
-    });
-    sectionWrapper.querySelectorAll('.stremio-row-next').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const c = sectionWrapper.querySelector(`#${btn.getAttribute('data-target')}`);
-        if (c) c.scrollBy({ left: c.clientWidth * 0.75, behavior: 'smooth' });
-      });
-    });
-  }
-
   /**
-   * Fetch live manifests from all installed addons and build carousel rows dynamically.
-   * Addons with real catalogs get populated rows; stream scrapers get a compact launcher card.
+   * Fetch live manifests from all installed Stremio add-ons AND CloudStream plugins.
    */
-  async function loadLiveAddonFeeds(addons) {
+  async function loadLiveFeeds(stremioAddons, csPlugins) {
     const container = sectionWrapper.querySelector('#stremio-all-feeds-container');
     if (!container) return;
 
     container.innerHTML = ''; // Clear loading state
-    let totalRendered = 0;
 
-    // Process addons in parallel, append rows as they resolve
-    const tasks = addons.map(async (addon) => {
+    // 1. Process Stremio Addons in parallel
+    const stremioTasks = stremioAddons.map(async (addon) => {
       try {
         const feedResults = await fetchLiveAddonCatalogItems(addon);
 
         if (!feedResults || feedResults.length === 0) {
-          // Stream-only scraper: show compact launcher row
-          appendScraperRow(container, addon);
+          appendScraperRow(container, addon, 'stremio');
         } else {
           for (const { feed, items } of feedResults) {
             appendCarouselRow(container, feed, items);
-            totalRendered++;
           }
         }
       } catch (err) {
         console.warn(`[stremio] Failed to load addon ${addon.name}:`, err);
-        appendScraperRow(container, addon);
+        appendScraperRow(container, addon, 'stremio');
       }
     });
 
-    await Promise.all(tasks);
+    // 2. Process CloudStream Plugins in parallel
+    const csTasks = csPlugins.map(async (plugin) => {
+      try {
+        const items = await fetchLiveCloudStreamPluginItems(plugin);
+        const icon = plugin.isNsfw ? '🔞' : (plugin.isAnime ? '🎌' : '☁️');
+
+        if (items && items.length > 0) {
+          const feed = {
+            feedId: `cs_${plugin.id}`,
+            catalogName: `${plugin.name} - Latest Video Feeds`,
+            addonName: `CloudStream (${plugin.name})`,
+            icon,
+            isCloudStream: true
+          };
+          appendCarouselRow(container, feed, items);
+        } else {
+          appendScraperRow(container, {
+            name: plugin.name,
+            icon,
+            description: plugin.description || 'CloudStream Media Scraper'
+          }, 'cloudstream');
+        }
+      } catch (err) {
+        console.warn(`[cloudstream] Failed to load plugin ${plugin.name}:`, err);
+      }
+    });
+
+    await Promise.all([...stremioTasks, ...csTasks]);
 
     if (container.children.length === 0) {
       container.innerHTML = `
         <div class="hub-empty-state" style="padding:2.5rem;text-align:center;">
           <h4 style="color:var(--text-high);margin-bottom:0.5rem;">No catalog feeds available</h4>
-          <p style="color:var(--text-med);font-size:0.85rem;">Your installed add-ons are stream scrapers. Use the IMDB launcher above to stream directly.</p>
+          <p style="color:var(--text-med);font-size:0.85rem;">Installed engines are currently on standby. Use the launcher above to stream directly.</p>
         </div>
       `;
     }
@@ -191,12 +191,15 @@ export function createStremioServersSection(callbacks = {}) {
     row.className = 'stremio-feed-row-section';
     row.id = `feed-sec-${feedId}`;
     row.dataset.feedId = feedId;
+    
+    const badgePrefix = feed.isCloudStream ? '☁️' : '⚡';
+
     row.innerHTML = `
       <div class="stremio-feed-header">
         <div class="stremio-feed-title-wrap">
           <span class="stremio-feed-icon">${feed.icon || '🍿'}</span>
           <h3 class="stremio-feed-title">${escapeHTML(feed.catalogName)}</h3>
-          <span class="stremio-feed-badge">⚡ ${escapeHTML(feed.addonName)}</span>
+          <span class="stremio-feed-badge">${badgePrefix} ${escapeHTML(feed.addonName)}</span>
         </div>
         <div class="stremio-stream-arrows">
           <button class="arrow-btn stremio-row-prev" data-target="carousel-${feedId}" title="Scroll Left">
@@ -226,17 +229,22 @@ export function createStremioServersSection(callbacks = {}) {
     });
   }
 
-  function appendScraperRow(container, addon) {
+  function appendScraperRow(container, engine, type = 'stremio') {
     const row = document.createElement('div');
     row.className = 'stremio-scraper-row';
-    row.style.cssText = 'padding:1rem 0.5rem;border-bottom:1px solid var(--border-glass);';
+    row.style.cssText = 'padding:0.75rem 0.5rem;border-bottom:1px solid var(--border-glass);';
+    const badgeLabel = type === 'cloudstream' ? 'CloudStream Scraper' : 'Stremio Scraper';
+
     row.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:0.75rem 1rem;background:rgba(255,255,255,0.02);border:1px solid var(--border-glass);border-radius:12px;">
         <div style="display:flex;align-items:center;gap:0.75rem;">
-          <span style="font-size:1.3rem;">${escapeHTML(addon.icon || '⚡')}</span>
+          <span style="font-size:1.3rem;">${escapeHTML(engine.icon || (type === 'cloudstream' ? '☁️' : '⚡'))}</span>
           <div>
-            <div style="font-weight:700;color:var(--text-high);font-size:0.92rem;">${escapeHTML(addon.name)}</div>
-            <div style="font-size:0.75rem;color:var(--text-med);">Stream scraper — finds sources when you select a title. No browse catalog.</div>
+            <div style="font-weight:700;color:var(--text-high);font-size:0.92rem;display:flex;align-items:center;gap:0.4rem;">
+              <span>${escapeHTML(engine.name)}</span>
+              <span style="font-size:0.68rem;background:rgba(0,242,254,0.1);color:var(--accent-cyan);padding:0.1rem 0.4rem;border-radius:4px;">${badgeLabel}</span>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-med);margin-top:0.15rem;">Live streaming scraper active. Resolves streams when a title is selected.</div>
           </div>
         </div>
         <button class="primary-btn accent-glow-btn scraper-launch-btn" style="padding:0.4rem 0.9rem;font-size:0.8rem;white-space:nowrap;">▶ Stream by ID</button>
@@ -288,15 +296,20 @@ export function createStremioServersSection(callbacks = {}) {
       const rating = escapeHTML(item.vote_average ? item.vote_average.toFixed(1) : '8.0');
       const releaseYear = escapeHTML((item.release_date || '').split('-')[0] || '');
       const type = item.type === 'tv' ? 'tv' : 'movie';
-      const typeBadge = type === 'tv' ? 'TV Series' : 'Movie';
+      
+      let typeBadge = type === 'tv' ? 'TV Series' : 'Movie';
+      if (item.isNsfw) typeBadge = '🔞 18+ Video';
+      else if (item.isAnime) typeBadge = '🎌 Anime';
 
-      // Build 3-stage poster fallback chain
+      const engineBadge = item.isCloudStream 
+        ? `☁️ ${escapeHTML(item.providerName || 'CloudStream')}` 
+        : `⚡ ${escapeHTML(feed.addonName || 'Stremio')}`;
+
+      // Build poster fallback
       const metahubMedium = imdbId.startsWith('tt') ? `https://images.metahub.space/poster/medium/${imdbId}/img` : null;
       const metahubSmall = imdbId.startsWith('tt') ? `https://images.metahub.space/poster/small/${imdbId}/img` : null;
-      const cinemetaPoster = imdbId.startsWith('tt') ? `https://v3-cinemeta.strem.io/meta/${type === 'tv' ? 'series' : 'movie'}/${imdbId}.json` : null;
-      const svgFallback = generateStremioTitlePoster ? generateStremioTitlePoster(rawTitle, (feed && feed.icon) ? `${feed.icon} ${feed.addonName}` : '⚡ STREMIO') : `https://placehold.co/342x513/0c0e15/00f2fe?text=${encodeURIComponent(rawTitle.substring(0,20))}`;
+      const svgFallback = generateStremioTitlePoster ? generateStremioTitlePoster(rawTitle, (feed && feed.icon) ? `${feed.icon} ${feed.addonName}` : '⚡ STREAM') : `https://placehold.co/342x513/0c0e15/00f2fe?text=${encodeURIComponent(rawTitle.substring(0,20))}`;
 
-      // Start with metahub or item poster
       const initialPoster = sanitizeUrl(item.poster || item.posterUrl || metahubMedium || svgFallback, svgFallback);
 
       card.innerHTML = `
@@ -308,8 +321,9 @@ export function createStremioServersSection(callbacks = {}) {
                decoding="async"
                data-imdb="${imdbId}"
                data-stage="0">
-          <span class="card-badge stremio-badge">⚡ Stremio</span>
+          <span class="card-badge stremio-badge">${engineBadge}</span>
           <span class="card-badge card-type-badge">${typeBadge}</span>
+          ${item.duration ? `<span class="card-badge" style="bottom:10px; right:10px; top:auto; left:auto; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); font-size:0.68rem; padding:0.15rem 0.45rem;">⏱ ${escapeHTML(item.duration)}</span>` : ''}
 
           <!-- Stream / Play Hover Action Overlay -->
           <div class="stremio-card-overlay">
@@ -341,7 +355,7 @@ export function createStremioServersSection(callbacks = {}) {
         </div>
       `;
 
-      // JS-based multi-stage poster fallback
+      // Multi-stage poster fallback
       const imgEl = card.querySelector('.card-poster');
       if (imgEl) {
         const posterFallbacks = [metahubMedium, metahubSmall, svgFallback].filter(Boolean);
@@ -358,16 +372,16 @@ export function createStremioServersSection(callbacks = {}) {
 
       card.querySelector('.stremio-play-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        onWatchClick(item.id, type);
+        onWatchClick(item, type);
       });
 
       card.querySelector('.stremio-info-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        onInfoClick(item.id, type);
+        onInfoClick(item, type);
       });
 
       card.addEventListener('click', () => {
-        onInfoClick(item.id, type);
+        onInfoClick(item, type);
       });
 
       container.appendChild(card);
@@ -377,8 +391,12 @@ export function createStremioServersSection(callbacks = {}) {
   // Initial Render
   renderShell();
 
-  // Listen for addon additions/toggles to re-render all running addon sections
+  // Listen for both Stremio Addons & CloudStream Plugins changes to re-render all feeds
   window.addEventListener('stremio-addons-changed', () => {
+    renderShell();
+  });
+
+  window.addEventListener('cloudstream-repos-changed', () => {
     renderShell();
   });
 

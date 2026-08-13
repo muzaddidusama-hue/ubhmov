@@ -26,7 +26,8 @@ import {
   deleteCloudStreamRepo,
   toggleCloudStreamPlugin,
   toggleCloudStreamRepo,
-  POPULAR_CLOUDSTREAM_REPOS_PRESETS
+  POPULAR_CLOUDSTREAM_REPOS_PRESETS,
+  getCloudStreamVideoMeta
 } from './utils/apiManager.js';
 import {
   isProxyActive,
@@ -882,16 +883,26 @@ async function handleInfoClick(id, type) {
 
   try {
     let itemDetails = null;
-    try {
-      itemDetails = await tmdb.getDetails(id, type);
-    } catch (tmdbErr) {
-      if (typeof id === 'string' && id.startsWith('tt')) {
-        itemDetails = await fetchStremioMeta(type, id);
-      }
-      if (!itemDetails) throw tmdbErr;
+    let actualId = typeof id === 'object' ? id.id : id;
+
+    if (typeof id === 'object' && (id.embedUrl || id.isCloudStream)) {
+      itemDetails = id;
+    } else if (typeof actualId === 'string' && actualId.startsWith('cs_')) {
+      itemDetails = getCloudStreamVideoMeta(actualId);
     }
 
-    const isBookmarked = state.bookmarks.some(b => b.id === id && b.mediaType === type);
+    if (!itemDetails) {
+      try {
+        itemDetails = await tmdb.getDetails(actualId, type);
+      } catch (tmdbErr) {
+        if (typeof actualId === 'string' && actualId.startsWith('tt')) {
+          itemDetails = await fetchStremioMeta(type, actualId);
+        }
+        if (!itemDetails) throw tmdbErr;
+      }
+    }
+
+    const isBookmarked = state.bookmarks.some(b => b.id === actualId && b.mediaType === type);
 
     populateDetailsModal(
       itemDetails,
@@ -920,12 +931,30 @@ async function handleInfoClick(id, type) {
 
 async function handleWatchClick(id, type) {
   // Close details modal if open
-  document.getElementById('details-modal').classList.add('hidden');
+  document.getElementById('details-modal')?.classList.add('hidden');
   
   showToast('Initiating stream player...', 'info');
 
   try {
-    const itemDetails = await tmdb.getDetails(id, type);
+    let itemDetails = null;
+    let actualId = typeof id === 'object' ? id.id : id;
+
+    if (typeof id === 'object' && (id.embedUrl || id.isCloudStream)) {
+      itemDetails = id;
+    } else if (typeof actualId === 'string' && actualId.startsWith('cs_')) {
+      itemDetails = getCloudStreamVideoMeta(actualId);
+    }
+
+    if (!itemDetails) {
+      try {
+        itemDetails = await tmdb.getDetails(actualId, type);
+      } catch (tmdbErr) {
+        if (typeof actualId === 'string' && actualId.startsWith('tt')) {
+          itemDetails = await fetchStremioMeta(type, actualId);
+        }
+        if (!itemDetails) throw tmdbErr;
+      }
+    }
     
     // Look up watch history logs to see if we have a resume point
     let resumeSeason = 1;
@@ -933,7 +962,7 @@ async function handleWatchClick(id, type) {
     let resumeProgressSeconds = 0;
     
     if (type === 'tv') {
-      const historyRecord = state.history.find(h => h.id === id && h.type === 'tv');
+      const historyRecord = state.history.find(h => h.id === actualId && h.type === 'tv');
       if (historyRecord && historyRecord.season && historyRecord.episode) {
         resumeSeason = historyRecord.season;
         resumeEpisode = historyRecord.episode;
@@ -941,7 +970,7 @@ async function handleWatchClick(id, type) {
         showToast(`Resuming watch from S${resumeSeason}:E${resumeEpisode}`, 'success');
       }
     } else {
-      const historyRecord = state.history.find(h => h.id === id && h.type === 'movie');
+      const historyRecord = state.history.find(h => h.id === actualId && h.type === 'movie');
       if (historyRecord && historyRecord.progressSeconds > 10) {
         resumeProgressSeconds = historyRecord.progressSeconds;
         const mins = Math.floor(resumeProgressSeconds / 60);
