@@ -1704,6 +1704,8 @@ export function toggleCloudStreamRepo(repoId, active) {
 
     window.dispatchEvent(new CustomEvent('cloudstream-repos-changed'));
   }
+}
+
 /**
  * Fetch live video items and stream links for an active CloudStream plugin.
  * For Adult/NSFW plugins (JavHD, JavFree, Pornhub, Xvideos, etc.), fetches real video thumbnails & embeds.
