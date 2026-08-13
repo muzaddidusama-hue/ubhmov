@@ -60,7 +60,9 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
         allowfullscreen 
         scrolling="no" 
         frameborder="0" 
-        allow="autoplay; fullscreen; encrypted-media; picture-in-picture; accelerometer; gyroscope; clipboard-write">
+        referrerpolicy="no-referrer"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture; accelerometer; gyroscope; clipboard-write"
+        style="width:100%; height:100%; border:none; background:#000;">
       </iframe>
     `;
   };
