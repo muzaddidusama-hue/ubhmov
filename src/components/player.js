@@ -36,15 +36,14 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
   // Set Title Info safely
   playerTitle.textContent = item.title || item.name || 'Stream title';
   
-  // Helper to load Iframe content with secure sandbox attribute
+  // Helper to load Iframe content
   const loadIframe = (url) => {
     iframeRoot.innerHTML = `
       <iframe src="${url}" 
-        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
         allowfullscreen 
         scrolling="no" 
         frameborder="0" 
-        allow="autoplay; encrypted-media; picture-in-picture">
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture; accelerometer; gyroscope; clipboard-write">
       </iframe>
     `;
   };
