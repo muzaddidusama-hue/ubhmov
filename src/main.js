@@ -19,7 +19,14 @@ import {
   toggleStremioAddon,
   POPULAR_STREMIO_ADDONS_PRESETS,
   runAddonHealthAndCapabilityCheck,
-  fetchStremioMeta
+  fetchStremioMeta,
+  getCloudStreamRepos,
+  getCloudStreamPlugins,
+  installCloudStreamRepo,
+  deleteCloudStreamRepo,
+  toggleCloudStreamPlugin,
+  toggleCloudStreamRepo,
+  POPULAR_CLOUDSTREAM_REPOS_PRESETS
 } from './utils/apiManager.js';
 import {
   isProxyActive,
@@ -1304,6 +1311,7 @@ function loadAdminDashboard() {
   loadAdminMembersTab();
   renderAdminServersTable();
   renderAdminStremioList();
+  renderAdminCloudStreamList();
   initAdminModalsAndActions();
 }
 
@@ -1658,6 +1666,275 @@ function renderAdminStremioList() {
   });
 }
 
+function renderAdminCloudStreamList() {
+  const presetsGrid = document.getElementById('cloudstream-presets-grid');
+  const reposList = document.getElementById('cloudstream-repos-list');
+  const pluginsGrid = document.getElementById('cloudstream-plugins-grid');
+  const pluginCountEl = document.getElementById('cloudstream-plugin-count');
+
+  const repos = getCloudStreamRepos();
+  const plugins = getCloudStreamPlugins();
+
+  if (pluginCountEl) {
+    pluginCountEl.textContent = plugins.length;
+  }
+
+  // 1. Render Presets
+  if (presetsGrid) {
+    presetsGrid.innerHTML = '';
+    const installedRepoUrls = new Set(repos.map(r => r.url));
+
+    POPULAR_CLOUDSTREAM_REPOS_PRESETS.forEach(preset => {
+      const isInstalled = installedRepoUrls.has(preset.url);
+      const card = document.createElement('div');
+      card.style.cssText = 'background:rgba(255,255,255,0.02); border:1px solid var(--border-glass); border-radius:12px; padding:1rem; display:flex; flex-direction:column; justify-content:space-between; gap:0.75rem;';
+
+      const tagHtml = preset.tags.map(t => `<span style="font-size:0.65rem; background:rgba(0,242,254,0.08); color:var(--accent-cyan); padding:0.1rem 0.4rem; border-radius:4px;">${escapeHTML(t)}</span>`).join(' ');
+
+      card.innerHTML = `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+            <h5 style="font-size:0.95rem; font-weight:700; color:var(--text-high); display:flex; align-items:center; gap:0.35rem;">
+              <span>${preset.icon}</span> ${escapeHTML(preset.name)}
+            </h5>
+          </div>
+          <p style="font-size:0.75rem; color:var(--text-med); line-height:1.4; margin-bottom:0.5rem;">${escapeHTML(preset.description)}</p>
+          <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">${tagHtml}</div>
+        </div>
+        <div style="margin-top:0.5rem;">
+          ${isInstalled ? `
+            <button class="action-badge-btn approved" style="width:100%; text-align:center; padding:0.4rem;" disabled>✓ Repository Installed</button>
+          ` : `
+            <button class="action-badge-btn install-cs-preset-btn" data-url="${escapeHTML(preset.url)}" style="width:100%; text-align:center; padding:0.4rem; color:var(--accent-cyan); border-color:rgba(0,242,254,0.3);">
+              + 1-Click Install Repo
+            </button>
+          `}
+        </div>
+      `;
+
+      card.querySelector('.install-cs-preset-btn')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = 'Installing Plugins...';
+        showToast(`Fetching CloudStream repository: ${preset.name}...`, 'info');
+        try {
+          const { repo, plugins: newPlugins } = await installCloudStreamRepo(preset.url);
+          showToast(`Installed "${repo.name}" with ${newPlugins.length} scraper plugins! 🎉`, 'success');
+          renderAdminCloudStreamList();
+          syncAdminConfigToCloud();
+        } catch (err) {
+          showToast(`Install failed: ${err.message}`, 'error');
+          btn.disabled = false;
+          btn.textContent = '+ 1-Click Install Repo';
+        }
+      });
+
+      presetsGrid.appendChild(card);
+    });
+  }
+
+  // 2. Render Installed Repositories
+  if (reposList) {
+    reposList.innerHTML = '';
+    if (repos.length === 0) {
+      reposList.innerHTML = `
+        <div style="text-align:center; padding:1.5rem; color:var(--text-med); background:rgba(255,255,255,0.01); border:1px dashed var(--border-glass); border-radius:12px; font-size:0.85rem;">
+          No CloudStream repositories installed. Click "Install Repository URL" or pick a 1-click preset above.
+        </div>
+      `;
+    } else {
+      repos.forEach(repo => {
+        const repoItem = document.createElement('div');
+        repoItem.style.cssText = 'background:var(--bg-card); border:1px solid var(--border-glass); border-radius:12px; padding:0.85rem 1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;';
+
+        const repoPlugins = plugins.filter(p => p.repoId === repo.id);
+        const isActive = repo.active !== false;
+
+        repoItem.innerHTML = `
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <h5 style="font-size:0.95rem; font-weight:700; color:var(--text-high);">${escapeHTML(repo.name)}</h5>
+              <span style="font-size:0.7rem; background:rgba(0,242,254,0.1); color:var(--accent-cyan); padding:0.1rem 0.4rem; border-radius:4px;">${repoPlugins.length} Plugins</span>
+              <span class="status-badge ${isActive ? 'approved' : 'suspended'}">${isActive ? 'Active' : 'Disabled'}</span>
+            </div>
+            <div style="font-family:monospace; font-size:0.7rem; color:var(--text-muted); margin-top:0.2rem; word-break:break-all;">
+              ${escapeHTML(repo.url)}
+            </div>
+          </div>
+          <div style="display:flex; gap:0.4rem;">
+            <button class="action-badge-btn toggle-cs-repo-btn" data-id="${escapeHTML(repo.id)}">${isActive ? 'Disable All' : 'Enable All'}</button>
+            <button class="action-badge-btn danger-action delete-cs-repo-btn" data-id="${escapeHTML(repo.id)}">Remove Repo</button>
+          </div>
+        `;
+
+        repoItem.querySelector('.toggle-cs-repo-btn')?.addEventListener('click', () => {
+          toggleCloudStreamRepo(repo.id, !isActive);
+          showToast(`Repository "${repo.name}" ${!isActive ? 'enabled' : 'disabled'}.`, 'info');
+          renderAdminCloudStreamList();
+          syncAdminConfigToCloud();
+        });
+
+        repoItem.querySelector('.delete-cs-repo-btn')?.addEventListener('click', () => {
+          if (confirm(`Remove CloudStream repository "${repo.name}" and all its installed scraper plugins?`)) {
+            deleteCloudStreamRepo(repo.id);
+            showToast(`Repository "${repo.name}" removed.`, 'info');
+            renderAdminCloudStreamList();
+            syncAdminConfigToCloud();
+          }
+        });
+
+        reposList.appendChild(repoItem);
+      });
+    }
+  }
+
+  // 3. Render Installed Plugins Grid with Filter
+  const renderFilteredPlugins = (activeFilter = 'all', searchQuery = '') => {
+    if (!pluginsGrid) return;
+    pluginsGrid.innerHTML = '';
+
+    let filtered = plugins;
+
+    // Category filter
+    if (activeFilter === 'nsfw') {
+      filtered = filtered.filter(p => p.isNsfw);
+    } else if (activeFilter === 'anime') {
+      filtered = filtered.filter(p => p.isAnime);
+    } else if (activeFilter === 'movies') {
+      filtered = filtered.filter(p => !p.isNsfw && !p.isAnime);
+    }
+
+    // Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(p => 
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.repoName && p.repoName.toLowerCase().includes(q))
+      );
+    }
+
+    if (filtered.length === 0) {
+      pluginsGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align:center; padding:2rem; color:var(--text-med); font-size:0.85rem;">
+          No plugins match the selected filter.
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(p => {
+      const pCard = document.createElement('div');
+      pCard.style.cssText = 'background:var(--bg-card); border:1px solid var(--border-glass); border-radius:12px; padding:1rem; display:flex; flex-direction:column; justify-content:space-between; gap:0.75rem;';
+
+      const isActive = p.active !== false;
+      const safeName = escapeHTML(p.name);
+      const safeDesc = escapeHTML(p.description || 'CloudStream Media Scraper Plugin');
+      const safeAuthors = escapeHTML((p.authors || []).join(', ') || 'Community');
+      const safeRepoName = escapeHTML(p.repoName || 'Custom Repo');
+
+      let badgeIcon = '🎬';
+      let badgeLabel = 'Movie/TV';
+      if (p.isNsfw) {
+        badgeIcon = '🔞';
+        badgeLabel = 'NSFW';
+      } else if (p.isAnime) {
+        badgeIcon = '🎌';
+        badgeLabel = 'Anime';
+      }
+
+      // Status indicator
+      let statusColor = '#10b981';
+      let statusText = 'Operational';
+      if (p.status === 2) {
+        statusColor = '#f59e0b';
+        statusText = 'Slow';
+      } else if (p.status === 3) {
+        statusColor = '#ef4444';
+        statusText = 'Offline';
+      }
+
+      pCard.innerHTML = `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.35rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              ${p.iconUrl ? `
+                <img src="${escapeHTML(p.iconUrl)}" alt="${safeName}" style="width:28px; height:28px; border-radius:6px; object-fit:cover;" onerror="this.style.display='none';">
+              ` : `
+                <span style="font-size:1.2rem;">${badgeIcon}</span>
+              `}
+              <div>
+                <h5 style="font-size:0.95rem; font-weight:700; color:var(--text-high);">${safeName}</h5>
+                <span style="font-size:0.65rem; color:var(--text-muted);">by ${safeAuthors} · v${escapeHTML(String(p.version))}</span>
+              </div>
+            </div>
+            <span style="font-size:0.65rem; background:rgba(0,242,254,0.1); color:var(--accent-cyan); padding:0.1rem 0.4rem; border-radius:4px;">${badgeLabel}</span>
+          </div>
+
+          <p style="font-size:0.75rem; color:var(--text-med); line-height:1.4; margin-top:0.4rem;">${safeDesc}</p>
+
+          <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem; font-size:0.7rem;">
+            <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${statusColor};"></span>
+            <span style="color:var(--text-muted);">${statusText}</span>
+            <span style="color:var(--text-muted);">· Repo: ${safeRepoName}</span>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-glass); padding-top:0.5rem; margin-top:0.25rem;">
+          <span class="status-badge ${isActive ? 'approved' : 'suspended'}" style="font-size:0.65rem; padding:0.1rem 0.4rem;">${isActive ? 'Active' : 'Disabled'}</span>
+          <button class="action-badge-btn toggle-cs-plugin-btn" data-id="${escapeHTML(p.id)}" style="font-size:0.75rem; padding:0.25rem 0.65rem;">
+            ${isActive ? 'Disable' : 'Enable'}
+          </button>
+        </div>
+      `;
+
+      pCard.querySelector('.toggle-cs-plugin-btn')?.addEventListener('click', () => {
+        toggleCloudStreamPlugin(p.id, !isActive);
+        showToast(`Plugin "${p.name}" ${!isActive ? 'enabled' : 'disabled'}.`, 'info');
+        renderAdminCloudStreamList();
+        syncAdminConfigToCloud();
+      });
+
+      pluginsGrid.appendChild(pCard);
+    });
+  };
+
+  // Attach search & filter handlers
+  const filterBtns = document.querySelectorAll('.cs-filter-btn');
+  const searchInput = document.getElementById('cloudstream-plugin-search');
+
+  let currentFilter = 'all';
+  let currentSearch = '';
+
+  filterBtns.forEach(btn => {
+    btn.onclick = () => {
+      filterBtns.forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'var(--bg-glass)';
+        b.style.color = 'var(--text-med)';
+        b.style.borderColor = 'var(--border-glass)';
+      });
+      btn.classList.add('active');
+      btn.style.background = 'rgba(0,242,254,0.15)';
+      btn.style.color = 'var(--accent-cyan)';
+      btn.style.borderColor = 'rgba(0,242,254,0.3)';
+
+      currentFilter = btn.getAttribute('data-filter') || 'all';
+      renderFilteredPlugins(currentFilter, currentSearch);
+    };
+  });
+
+  if (searchInput) {
+    searchInput.oninput = (e) => {
+      currentSearch = e.target.value;
+      renderFilteredPlugins(currentFilter, currentSearch);
+    };
+  }
+
+  // Initial filtered render
+  renderFilteredPlugins('all', '');
+}
+
 function openServerModal(server = null) {
   const modal = document.getElementById('modal-stream-server');
   const titleEl = document.getElementById('modal-server-title');
@@ -1941,6 +2218,65 @@ function initAdminModalsAndActions() {
     };
   }
 
+  // CloudStream Repository Modal triggers
+  const csModal = document.getElementById('modal-cloudstream-repo');
+  const csUrlInput = document.getElementById('cloudstream-form-url');
+
+  document.getElementById('admin-add-cloudstream-btn')?.addEventListener('click', () => {
+    if (csUrlInput) csUrlInput.value = '';
+    if (csModal) csModal.classList.remove('hidden');
+  });
+
+  document.getElementById('modal-cloudstream-close-btn')?.addEventListener('click', () => csModal?.classList.add('hidden'));
+  document.getElementById('modal-cloudstream-cancel-btn')?.addEventListener('click', () => csModal?.classList.add('hidden'));
+
+  // Quick fill example buttons
+  document.querySelectorAll('.quick-fill-repo-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const url = btn.getAttribute('data-url');
+      if (csUrlInput && url) {
+        csUrlInput.value = url;
+      }
+    });
+  });
+
+  // CloudStream Form Submit
+  const csForm = document.getElementById('form-cloudstream-repo');
+  if (csForm) {
+    csForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const rawUrl = csUrlInput?.value.trim();
+      const submitBtn = document.getElementById('cloudstream-form-submit-btn');
+
+      if (!rawUrl) {
+        showToast('Please enter a CloudStream repository URL.', 'error');
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Fetching Manifest...';
+      }
+
+      showToast('Fetching CloudStream repository manifest and resolving plugins...', 'info');
+
+      try {
+        const { repo, plugins: newPlugins } = await installCloudStreamRepo(rawUrl);
+        csModal?.classList.add('hidden');
+        renderAdminCloudStreamList();
+        syncAdminConfigToCloud();
+        showToast(`Repository "${repo.name}" installed with ${newPlugins.length} scraper plugins! 🎉`, 'success');
+      } catch (err) {
+        showToast(`CloudStream install error: ${err.message}`, 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Install Repository';
+        }
+      }
+    };
+  }
+
   // TMDB Connection Test Button
   const tmdbKeyInput = document.getElementById('admin-tmdb-key-input');
   if (tmdbKeyInput) {
@@ -1989,6 +2325,8 @@ function syncAdminConfigToCloud() {
       tmdbApiKey: getApiKey(),
       streamServers: getStreamServers(),
       stremioAddons: getStremioAddons(),
+      cloudstreamRepos: getCloudStreamRepos(),
+      cloudstreamPlugins: getCloudStreamPlugins(),
       updatedAt: Date.now(),
       updatedBy: state.currentUser.email
     };
@@ -2138,6 +2476,12 @@ function initializeAuthListener() {
           }
           if (Array.isArray(globalConfig.stremioAddons) && globalConfig.stremioAddons.length > 0) {
             localStorage.setItem('stremio_addons', JSON.stringify(globalConfig.stremioAddons));
+          }
+          if (Array.isArray(globalConfig.cloudstreamRepos) && globalConfig.cloudstreamRepos.length > 0) {
+            localStorage.setItem('cloudstream_repos', JSON.stringify(globalConfig.cloudstreamRepos));
+          }
+          if (Array.isArray(globalConfig.cloudstreamPlugins) && globalConfig.cloudstreamPlugins.length > 0) {
+            localStorage.setItem('cloudstream_plugins', JSON.stringify(globalConfig.cloudstreamPlugins));
           }
         }
         

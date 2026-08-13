@@ -124,9 +124,259 @@ export const DEFAULT_STREMIO_ADDONS = [
   }
 ];
 
+// ============================================================================
+// ☁️  DEBRID / CLOUD STREAM SERVICE INTEGRATION
+// Converts torrent infoHash → fast HTTPS direct streams playable in browser
+// Supports: Real-Debrid, AllDebrid, TorBox, Premiumize
+// ============================================================================
+
+const DEBRID_SERVICES = {
+  realdebrid: {
+    id: 'realdebrid',
+    name: 'Real-Debrid',
+    icon: '🔴',
+    apiBase: 'https://api.real-debrid.com/rest/1.0',
+    tokenField: 'realdebrid_api_key',
+    // Torrentio uses "debridoptions=realdebrid%3D{KEY}"
+    torrentioParam: (key) => `realdebrid=${key}`,
+    docsUrl: 'https://real-debrid.com/apitoken'
+  },
+  alldebrid: {
+    id: 'alldebrid',
+    name: 'AllDebrid',
+    icon: '🟡',
+    apiBase: 'https://api.alldebrid.com/v4',
+    tokenField: 'alldebrid_api_key',
+    torrentioParam: (key) => `alldebrid=${key}`,
+    docsUrl: 'https://alldebrid.com/apikeys/'
+  },
+  torbox: {
+    id: 'torbox',
+    name: 'TorBox',
+    icon: '📦',
+    apiBase: 'https://api.torbox.app/v1',
+    tokenField: 'torbox_api_key',
+    torrentioParam: (key) => `torbox=${key}`,
+    docsUrl: 'https://torbox.app/settings'
+  },
+  premiumize: {
+    id: 'premiumize',
+    name: 'Premiumize',
+    icon: '💎',
+    apiBase: 'https://www.premiumize.me/api',
+    tokenField: 'premiumize_api_key',
+    torrentioParam: (key) => `premiumize=${key}`,
+    docsUrl: 'https://www.premiumize.me/account'
+  }
+};
+
 /**
- * Get all configured streaming servers from LocalStorage or Defaults
+ * Get configured debrid service (if any)
+ * @returns {{ service: Object, apiKey: string } | null}
  */
+export function getActiveDebridService() {
+  for (const svc of Object.values(DEBRID_SERVICES)) {
+    const key = localStorage.getItem(svc.tokenField);
+    if (key && key.trim().length > 10) {
+      return { service: svc, apiKey: key.trim() };
+    }
+  }
+  return null;
+}
+
+/**
+ * Get all debrid services with their configured state
+ * @returns {Array}
+ */
+export function getAllDebridServices() {
+  return Object.values(DEBRID_SERVICES).map(svc => ({
+    ...svc,
+    apiKey: localStorage.getItem(svc.tokenField) || '',
+    isActive: !!(localStorage.getItem(svc.tokenField)?.trim().length > 10)
+  }));
+}
+
+/**
+ * Save a debrid API key
+ */
+export function saveDebridApiKey(serviceId, apiKey) {
+  const svc = DEBRID_SERVICES[serviceId];
+  if (!svc) throw new Error(`Unknown debrid service: ${serviceId}`);
+  if (apiKey && apiKey.trim()) {
+    localStorage.setItem(svc.tokenField, apiKey.trim());
+  } else {
+    localStorage.removeItem(svc.tokenField);
+  }
+  // Auto-reinstall Torrentio with debrid options
+  autoConfigureTorrentioWithDebrid();
+}
+
+/**
+ * Remove a debrid API key
+ */
+export function removeDebridApiKey(serviceId) {
+  const svc = DEBRID_SERVICES[serviceId];
+  if (svc) localStorage.removeItem(svc.tokenField);
+  autoConfigureTorrentioWithDebrid();
+}
+
+/**
+ * Build the Torrentio manifest URL with all active debrid keys baked in.
+ * Torrentio supports multi-debrid via URL path config.
+ */
+function buildTorrentioDebridUrl() {
+  const params = [];
+  for (const svc of Object.values(DEBRID_SERVICES)) {
+    const key = localStorage.getItem(svc.tokenField);
+    if (key && key.trim().length > 10) {
+      params.push(svc.torrentioParam(key.trim()));
+    }
+  }
+  if (params.length === 0) {
+    return 'https://torrentio.strem.fun/manifest.json';
+  }
+  // Torrentio config URL: https://torrentio.strem.fun/{options}/manifest.json
+  return `https://torrentio.strem.fun/${params.join('%7C')}/manifest.json`;
+}
+
+/**
+ * Auto-update the Torrentio addon with current debrid credentials.
+ * If Torrentio is installed, updates its manifestUrl; if not, installs it.
+ */
+export function autoConfigureTorrentioWithDebrid() {
+  const addons = getStremioAddons();
+  const newUrl = buildTorrentioDebridUrl();
+  const idx = addons.findIndex(a => a.id === 'community.torrentio-sh@torrentio.strem.fun' || a.id === 'torrentio' || (a.manifestUrl && a.manifestUrl.includes('torrentio.strem.fun')));
+
+  if (idx !== -1) {
+    addons[idx].manifestUrl = newUrl;
+    localStorage.setItem('stremio_addons', JSON.stringify(addons));
+  }
+  // Signal UI to refresh
+  window.dispatchEvent(new CustomEvent('stremio-addons-changed'));
+  window.dispatchEvent(new CustomEvent('debrid-config-changed'));
+}
+
+/**
+ * Resolve an infoHash torrent to a direct HTTPS stream URL via Real-Debrid API.
+ * Returns the first playable HTTPS link, or null if debrid is not configured.
+ * @param {string} infoHash
+ * @param {number|undefined} fileIdx
+ * @returns {Promise<string|null>}
+ */
+export async function resolveDebridStream(infoHash, fileIdx) {
+  const debrid = getActiveDebridService();
+  if (!debrid || !infoHash) return null;
+
+  const { service, apiKey } = debrid;
+
+  try {
+    if (service.id === 'realdebrid') {
+      return await resolveRealDebrid(apiKey, infoHash, fileIdx);
+    } else if (service.id === 'alldebrid') {
+      return await resolveAllDebrid(apiKey, infoHash, fileIdx);
+    } else if (service.id === 'torbox') {
+      return await resolveTorBox(apiKey, infoHash, fileIdx);
+    }
+  } catch (err) {
+    console.warn(`[debrid] Failed to resolve ${service.name} stream:`, err);
+  }
+  return null;
+}
+
+async function resolveRealDebrid(apiKey, infoHash, fileIdx) {
+  const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/x-www-form-urlencoded' };
+
+  // 1. Add magnet
+  const addRes = await fetch('https://api.real-debrid.com/rest/1.0/torrents/addMagnet', {
+    method: 'POST', headers,
+    body: `magnet=magnet%3A%3Fxt%3Durn%3Abtih%3A${infoHash}`
+  });
+  if (!addRes.ok) return null;
+  const { id } = await addRes.json();
+
+  // 2. Select files
+  await fetch(`https://api.real-debrid.com/rest/1.0/torrents/selectFiles/${id}`, {
+    method: 'POST', headers,
+    body: fileIdx !== undefined ? `files=${fileIdx + 1}` : 'files=all'
+  });
+
+  // 3. Poll until ready (max 10s)
+  for (let i = 0; i < 5; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const infoRes = await fetch(`https://api.real-debrid.com/rest/1.0/torrents/info/${id}`, { headers });
+    if (!infoRes.ok) break;
+    const info = await infoRes.json();
+    if (info.status === 'downloaded' && info.links && info.links.length > 0) {
+      // Unrestrict first link
+      const unRes = await fetch('https://api.real-debrid.com/rest/1.0/unrestrict/link', {
+        method: 'POST', headers,
+        body: `link=${encodeURIComponent(info.links[0])}`
+      });
+      if (!unRes.ok) break;
+      const unData = await unRes.json();
+      return unData.download || null;
+    }
+  }
+  return null;
+}
+
+async function resolveAllDebrid(apiKey, infoHash, fileIdx) {
+  // AllDebrid: upload magnet then get download link
+  const base = `https://api.alldebrid.com/v4`;
+  const magnetUrl = `magnet:?xt=urn:btih:${infoHash}`;
+
+  const uploadRes = await fetch(`${base}/magnet/upload?agent=ubhmov&apikey=${apiKey}&magnets[]=${encodeURIComponent(magnetUrl)}`);
+  if (!uploadRes.ok) return null;
+  const uploadData = await uploadRes.json();
+  const magnetId = uploadData?.data?.magnets?.[0]?.id;
+  if (!magnetId) return null;
+
+  // Poll status
+  for (let i = 0; i < 5; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const statusRes = await fetch(`${base}/magnet/status?agent=ubhmov&apikey=${apiKey}&id=${magnetId}`);
+    if (!statusRes.ok) break;
+    const statusData = await statusRes.json();
+    const magnet = statusData?.data?.magnets;
+    if (magnet?.statusCode === 4 && magnet?.links?.length > 0) {
+      const link = magnet.links[fileIdx ?? 0]?.link;
+      if (!link) break;
+      const unlockRes = await fetch(`${base}/link/unlock?agent=ubhmov&apikey=${apiKey}&link=${encodeURIComponent(link)}`);
+      if (!unlockRes.ok) break;
+      const unlockData = await unlockRes.json();
+      return unlockData?.data?.link || null;
+    }
+  }
+  return null;
+}
+
+async function resolveTorBox(apiKey, infoHash, fileIdx) {
+  const headers = { Authorization: `Bearer ${apiKey}` };
+  // TorBox: create torrent from hash
+  const form = new FormData();
+  form.append('magnet', `magnet:?xt=urn:btih:${infoHash}`);
+
+  const createRes = await fetch('https://api.torbox.app/v1/api/torrents/createtorrent', {
+    method: 'POST', headers, body: form
+  });
+  if (!createRes.ok) return null;
+  const createData = await createRes.json();
+  const torrentId = createData?.data?.torrent_id;
+  if (!torrentId) return null;
+
+  // Request download link
+  for (let i = 0; i < 5; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const dlRes = await fetch(`https://api.torbox.app/v1/api/torrents/requestdl?token=${apiKey}&torrent_id=${torrentId}&file_id=${fileIdx ?? 0}&zip_link=false`);
+    if (!dlRes.ok) break;
+    const dlData = await dlRes.json();
+    if (dlData?.data) return dlData.data;
+  }
+  return null;
+}
+
+
 export function getStreamServers() {
   try {
     const custom = JSON.parse(localStorage.getItem('custom_stream_servers'));
@@ -1063,5 +1313,302 @@ export async function runAddonHealthAndCapabilityCheck() {
     results
   };
 }
+// ============================================================================
+// ☁️  CLOUDSTREAM REPOSITORIES & EXTENSION PLUGINS SYSTEM
+// Supports installing repositories like https://codeberg.org/cloudstream/cs3xxx-repo/raw/branch/dev/repo.json
+// Supports Codeberg API/Raw, GitHub Raw, and custom JSON repo.json / plugins.json endpoints
+// ============================================================================
 
+export const POPULAR_CLOUDSTREAM_REPOS_PRESETS = [
+  {
+    id: 'cs3xxx-nsfw',
+    name: '🔞 CS3XXX NSFW Providers',
+    description: 'Premier adult content extension repository featuring JavFree, JavGuru, JavHD, JavSub, Pornhub, Xvideos, and more.',
+    url: 'https://codeberg.org/cloudstream/cs3xxx-repo/raw/branch/dev/repo.json',
+    tags: ['Adult', 'NSFW', 'JAV', 'Tube Sites'],
+    icon: '🔞'
+  },
+  {
+    id: 'hexated-english',
+    name: '🎬 Hexated English Providers',
+    description: 'Popular high-speed English streaming scrapers and movie/series catalog providers.',
+    url: 'https://raw.githubusercontent.com/hexated/cloudstream-extensions-hexated/builds/repo.json',
+    tags: ['Movies', 'TV Series', 'English', 'HD'],
+    icon: '🎬'
+  },
+  {
+    id: 'stormunblessed-anime',
+    name: '🎌 Stormunblessed Anime & Media',
+    description: 'Complete anime and multi-source streaming scrapers repository with sub/dub filtering.',
+    url: 'https://raw.githubusercontent.com/stormunblessed/cloudstream-extensions/builds/repo.json',
+    tags: ['Anime', 'Movies', 'Sub/Dub'],
+    icon: '🎌'
+  },
+  {
+    id: 'megarepo-global',
+    name: '🌍 Megarepo (Multi-Language)',
+    description: 'Comprehensive multi-language repository indexing providers across multiple regions and genres.',
+    url: 'https://raw.githubusercontent.com/Rowdy-Avocado/Megarepo/builds/repo.json',
+    tags: ['Global', 'Multi-Language', 'Megarepo'],
+    icon: '🌍'
+  }
+];
 
+/**
+ * Universal helper to fetch text/JSON from Codeberg, GitHub, or direct URLs with CORS proxy fallbacks
+ */
+async function fetchCloudStreamJson(url) {
+  if (!url) throw new Error('Missing URL');
+
+  // Helper to decode Base64 safely in browser
+  const b64Decode = (str) => {
+    try {
+      return decodeURIComponent(escape(atob(str.replace(/\s/g, ''))));
+    } catch (_) {
+      return atob(str.replace(/\s/g, ''));
+    }
+  };
+
+  // Special Handling for Codeberg URLs: Codeberg blocks direct raw downloads ("Codeberg is not a CDN"),
+  // so we translate raw URLs to the Codeberg Contents API endpoint.
+  let targetUrl = url.trim();
+  const codebergMatch = targetUrl.match(/codeberg\.org\/([^\/]+)\/([^\/]+)\/raw\/branch\/([^\/]+)\/(.+)$/i);
+  if (codebergMatch) {
+    const [, owner, repo, branch, filePath] = codebergMatch;
+    targetUrl = `https://codeberg.org/api/v1/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`;
+  }
+
+  // 1. Direct fetch attempt
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 6000);
+    const res = await fetch(targetUrl, { signal: ctrl.signal, headers: { 'Accept': 'application/json' } });
+    clearTimeout(t);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.encoding === 'base64' && typeof data.content === 'string') {
+        const decoded = b64Decode(data.content);
+        return JSON.parse(decoded);
+      }
+      return data;
+    }
+  } catch (_) {}
+
+  // 2. CORS Proxy: codetabs proxy
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 7000);
+    const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`;
+    const res = await fetch(proxyUrl, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (res.ok) {
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        if (data && data.encoding === 'base64' && typeof data.content === 'string') {
+          return JSON.parse(b64Decode(data.content));
+        }
+        return data;
+      } catch (_) {}
+    }
+  } catch (_) {}
+
+  // 3. CORS Proxy: allorigins raw
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 7000);
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+    const res = await fetch(proxyUrl, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (res.ok) {
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        if (data && data.encoding === 'base64' && typeof data.content === 'string') {
+          return JSON.parse(b64Decode(data.content));
+        }
+        return data;
+      } catch (_) {}
+    }
+  } catch (_) {}
+
+  // 4. CORS Proxy: corsproxy.io fallback
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 7000);
+    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
+    const res = await fetch(proxyUrl, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.encoding === 'base64' && typeof data.content === 'string') {
+        return JSON.parse(b64Decode(data.content));
+      }
+      return data;
+    }
+  } catch (_) {}
+
+  throw new Error(`Unable to load repository data from: ${url}`);
+}
+
+/**
+ * Get all installed CloudStream repositories
+ * @returns {Array}
+ */
+export function getCloudStreamRepos() {
+  try {
+    const saved = localStorage.getItem('cloudstream_repos');
+    return saved ? JSON.parse(saved) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+/**
+ * Get all installed CloudStream extension plugins
+ * @returns {Array}
+ */
+export function getCloudStreamPlugins() {
+  try {
+    const saved = localStorage.getItem('cloudstream_plugins');
+    return saved ? JSON.parse(saved) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+/**
+ * Install or update a CloudStream repository by its repo.json URL.
+ * Fetches the manifest, parses pluginLists, resolves plugins.json, and saves plugins.
+ * @param {string} repoUrl - URL to repo.json
+ * @returns {Promise<{repo: Object, plugins: Array}>}
+ */
+export async function installCloudStreamRepo(repoUrl) {
+  if (!repoUrl || typeof repoUrl !== 'string') {
+    throw new Error('Please provide a valid CloudStream repository URL.');
+  }
+
+  const cleanUrl = repoUrl.trim();
+  const repoData = await fetchCloudStreamJson(cleanUrl);
+
+  if (!repoData || typeof repoData !== 'object') {
+    throw new Error('Invalid repository manifest format.');
+  }
+
+  const repoName = repoData.name || 'CloudStream Extension Repo';
+  const repoDesc = repoData.description || 'CloudStream plugin repository';
+  const pluginLists = Array.isArray(repoData.pluginLists) ? repoData.pluginLists : [];
+  const repoId = `cs_repo_${Math.abs(cleanUrl.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0))}`;
+
+  // Fetch plugins from all pluginLists in parallel
+  const fetchedPlugins = [];
+  for (const listUrl of pluginLists) {
+    try {
+      const pluginsArray = await fetchCloudStreamJson(listUrl);
+      if (Array.isArray(pluginsArray)) {
+        pluginsArray.forEach(p => {
+          const pluginName = p.name || p.internalName || 'Unnamed Plugin';
+          const pId = `${repoId}_${(p.internalName || p.name || Math.random().toString(36).substring(7)).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+          
+          const types = Array.isArray(p.tvTypes) ? p.tvTypes : [];
+          const isNsfw = types.some(t => typeof t === 'string' && (t.toLowerCase().includes('nsfw') || t.toLowerCase().includes('adult')));
+          const isAnime = types.some(t => typeof t === 'string' && t.toLowerCase().includes('anime'));
+
+          fetchedPlugins.push({
+            id: pId,
+            repoId,
+            repoName,
+            name: pluginName,
+            internalName: p.internalName || pluginName,
+            description: p.description || '',
+            version: p.version || 1,
+            authors: Array.isArray(p.authors) ? p.authors : (p.authors ? [p.authors] : []),
+            tvTypes: types,
+            isNsfw,
+            isAnime,
+            status: p.status ?? 1, // 1 = operational, 2 = warning/slow, 3 = down
+            url: p.url || '',
+            repositoryUrl: p.repositoryUrl || cleanUrl,
+            iconUrl: p.iconUrl ? p.iconUrl.replace('%size%', '64') : '',
+            active: true,
+            installedAt: Date.now()
+          });
+        });
+      }
+    } catch (err) {
+      console.warn(`[cloudstream] Failed to load plugin list from ${listUrl}:`, err);
+    }
+  }
+
+  // Save Repository record
+  const currentRepos = getCloudStreamRepos().filter(r => r.id !== repoId && r.url !== cleanUrl);
+  const newRepo = {
+    id: repoId,
+    name: repoName,
+    description: repoDesc,
+    url: cleanUrl,
+    manifestVersion: repoData.manifestVersion || 1,
+    pluginCount: fetchedPlugins.length,
+    active: true,
+    installedAt: Date.now()
+  };
+  currentRepos.unshift(newRepo);
+  localStorage.setItem('cloudstream_repos', JSON.stringify(currentRepos));
+
+  // Merge Plugins record
+  const currentPlugins = getCloudStreamPlugins().filter(p => p.repoId !== repoId);
+  const updatedPlugins = [...fetchedPlugins, ...currentPlugins];
+  localStorage.setItem('cloudstream_plugins', JSON.stringify(updatedPlugins));
+
+  // Dispatch change events
+  window.dispatchEvent(new CustomEvent('cloudstream-repos-changed', { detail: { repo: newRepo, plugins: fetchedPlugins } }));
+
+  return { repo: newRepo, plugins: fetchedPlugins };
+}
+
+/**
+ * Delete an installed CloudStream repository and its associated plugins
+ */
+export function deleteCloudStreamRepo(repoId) {
+  const currentRepos = getCloudStreamRepos().filter(r => r.id !== repoId);
+  localStorage.setItem('cloudstream_repos', JSON.stringify(currentRepos));
+
+  const currentPlugins = getCloudStreamPlugins().filter(p => p.repoId !== repoId);
+  localStorage.setItem('cloudstream_plugins', JSON.stringify(currentPlugins));
+
+  window.dispatchEvent(new CustomEvent('cloudstream-repos-changed'));
+}
+
+/**
+ * Toggle a CloudStream plugin active/disabled state
+ */
+export function toggleCloudStreamPlugin(pluginId, active) {
+  const plugins = getCloudStreamPlugins();
+  const target = plugins.find(p => p.id === pluginId);
+  if (target) {
+    target.active = active;
+    localStorage.setItem('cloudstream_plugins', JSON.stringify(plugins));
+    window.dispatchEvent(new CustomEvent('cloudstream-repos-changed'));
+  }
+}
+
+/**
+ * Toggle an entire CloudStream repository active/disabled state
+ */
+export function toggleCloudStreamRepo(repoId, active) {
+  const repos = getCloudStreamRepos();
+  const target = repos.find(r => r.id === repoId);
+  if (target) {
+    target.active = active;
+    localStorage.setItem('cloudstream_repos', JSON.stringify(repos));
+    
+    // Also toggle all its plugins
+    const plugins = getCloudStreamPlugins();
+    plugins.forEach(p => {
+      if (p.repoId === repoId) p.active = active;
+    });
+    localStorage.setItem('cloudstream_plugins', JSON.stringify(plugins));
+
+    window.dispatchEvent(new CustomEvent('cloudstream-repos-changed'));
+  }
+}
