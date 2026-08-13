@@ -443,6 +443,15 @@ export const POPULAR_STREMIO_ADDONS_PRESETS = [
     version: '1.0.4',
     tags: ['Anime', 'Kitsu.io', 'Japanese/Sub'],
     icon: '🎌'
+  },
+  {
+    id: 'thepiratebay-plus',
+    name: 'ThePirateBay+ (TPB Community)',
+    description: 'Official TPB Stremio catalog and stream scraper indexing movies, series, and community adult/other feeds.',
+    manifestUrl: 'https://thepiratebay-plus.strem.fun/manifest.json',
+    version: '2.0.0',
+    tags: ['TPB', 'Community', 'Streams'],
+    icon: '🏴‍☠️'
   }
 ];
 
@@ -522,6 +531,37 @@ export const STREMIO_CATALOG_CHANNELS = [
  * @returns {Promise<Array>} List of standardized movie/series items
  */
 /**
+ * Generates an SVG poster for Stremio items that lack external poster art
+ */
+export function generateStremioTitlePoster(title, badgeText = '⚡ STREMIO') {
+  const safeTitle = (title || 'Video Title').substring(0, 45).replace(/[<>&"]/g, '');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="342" height="513" viewBox="0 0 342 513">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0f172a"/>
+        <stop offset="50%" stop-color="#1e1b4b"/>
+        <stop offset="100%" stop-color="#020617"/>
+      </linearGradient>
+      <linearGradient id="acc" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#00f2fe"/>
+        <stop offset="100%" stop-color="#4facfe"/>
+      </linearGradient>
+    </defs>
+    <rect width="342" height="513" rx="16" fill="url(#bg)"/>
+    <circle cx="171" cy="190" r="42" fill="rgba(0, 242, 254, 0.12)" stroke="rgba(0, 242, 254, 0.4)" stroke-width="2"/>
+    <polygon points="164,176 186,190 164,204" fill="#00f2fe"/>
+    <text x="171" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#00f2fe" text-anchor="middle" letter-spacing="2">${badgeText}</text>
+    <rect x="25" y="295" width="292" height="2" fill="url(#acc)" opacity="0.4"/>
+    <foreignObject x="25" y="315" width="292" height="160">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:system-ui,-apple-system,sans-serif; color:#ffffff; font-size:15px; font-weight:700; text-align:center; line-height:1.35; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical;">
+        ${safeTitle}
+      </div>
+    </foreignObject>
+  </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+/**
  * Resolves all active catalog feeds from all running/active Stremio add-ons
  * @returns {Array<Object>} List of feed descriptors
  */
@@ -535,17 +575,21 @@ export function getActiveAddonCatalogFeeds() {
     // Check if addon has explicit catalogs array
     if (Array.isArray(addon.catalogs) && addon.catalogs.length > 0) {
       addon.catalogs.forEach(cat => {
-        const catType = cat.type || 'movie';
+        const rawType = cat.type || 'movie';
         const catId = cat.id || 'top';
-        const icon = catType === 'movie' ? '🍿' : (catType === 'series' || catType === 'tv' ? '📺' : '🎬');
+        const isAdult = rawType === 'other' || rawType.toLowerCase().includes('xxx') || rawType.toLowerCase().includes('porn') || catId.toLowerCase().includes('porn') || (cat.name && cat.name.toLowerCase().includes('porn'));
+        const icon = isAdult ? '🔞' : (rawType === 'movie' ? '🍿' : (rawType === 'series' || rawType === 'tv' ? '📺' : '🎬'));
+        
         feeds.push({
-          feedId: `${addon.id}_${catType}_${catId}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
+          feedId: `${addon.id}_${rawType}_${catId}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
           addonId: addon.id,
           addonName: addon.name,
-          catalogType: catType === 'series' ? 'tv' : catType,
+          rawType: rawType,
+          catalogType: rawType === 'series' ? 'tv' : (rawType === 'other' ? 'movie' : rawType),
           catalogId: catId,
-          catalogName: cat.name ? `${addon.name} - ${cat.name}` : `${addon.name} - ${catType} ${catId}`,
-          endpoint: `${baseUrl}/catalog/${catType}/${catId}.json`,
+          catalogName: cat.name ? `${addon.name} - ${cat.name}` : `${addon.name} - ${rawType} ${catId}`,
+          endpoint: `${baseUrl}/catalog/${rawType}/${catId}.json`,
+          fallbackEndpoint: `${baseUrl}/catalog/${rawType}/${catId}/skip=0.json`,
           icon: icon
         });
       });
@@ -555,6 +599,7 @@ export function getActiveAddonCatalogFeeds() {
         feedId: 'cinemeta_movie_top',
         addonId: addon.id,
         addonName: addon.name,
+        rawType: 'movie',
         catalogType: 'movie',
         catalogId: 'top',
         catalogName: `${addon.name} - Top Movies`,
@@ -565,11 +610,31 @@ export function getActiveAddonCatalogFeeds() {
         feedId: 'cinemeta_series_top',
         addonId: addon.id,
         addonName: addon.name,
+        rawType: 'series',
         catalogType: 'tv',
         catalogId: 'top',
         catalogName: `${addon.name} - Popular TV Series`,
         endpoint: `${baseUrl}/catalog/series/top.json`,
         icon: '📺'
+      });
+    } else {
+      // Proactively probe add-on's declared types (e.g. "other", "movie", "series")
+      const types = Array.isArray(addon.types) ? addon.types : ['movie'];
+      types.forEach(t => {
+        const isAdult = t === 'other' || t.toLowerCase().includes('xxx') || t.toLowerCase().includes('porn') || (addon.name && addon.name.toLowerCase().includes('porn'));
+        const icon = isAdult ? '🔞' : (t === 'movie' ? '🍿' : (t === 'series' || t === 'tv' ? '📺' : '🎬'));
+        feeds.push({
+          feedId: `${addon.id}_${t}_default`.replace(/[^a-zA-Z0-9_-]/g, '_'),
+          addonId: addon.id,
+          addonName: addon.name,
+          rawType: t,
+          catalogType: t === 'series' ? 'tv' : (t === 'other' ? 'movie' : t),
+          catalogId: t,
+          catalogName: `${addon.name} - ${t.toUpperCase()}`,
+          endpoint: `${baseUrl}/catalog/${t}/${t}.json`,
+          fallbackEndpoint: `${baseUrl}/catalog/${t}/top.json`,
+          icon: icon
+        });
       });
     }
   });
@@ -623,11 +688,17 @@ export async function fetchStremioFeedItems(feed) {
   };
 
   try {
-    const data = await fetchWithFallback(feed.endpoint);
+    let data = await fetchWithFallback(feed.endpoint);
+    if ((!data || !Array.isArray(data.metas) || data.metas.length === 0) && feed.fallbackEndpoint) {
+      data = await fetchWithFallback(feed.fallbackEndpoint);
+    }
+
     const metas = data && Array.isArray(data.metas) ? data.metas : [];
 
     return metas.map(meta => {
-      const type = (meta.type === 'series' || meta.type === 'tv') ? 'tv' : (meta.type === 'other' ? 'movie' : (meta.type || 'movie'));
+      const rawType = meta.type || feed.rawType || 'movie';
+      const type = (rawType === 'series' || rawType === 'tv') ? 'tv' : 'movie';
+      const title = meta.name || meta.title || 'Untitled';
       
       // Stremio's native Metahub poster and backdrop CDN resolution
       let poster = meta.poster;
@@ -635,7 +706,7 @@ export async function fetchStremioFeedItems(feed) {
         if (meta.id && String(meta.id).startsWith('tt')) {
           poster = `https://images.metahub.space/poster/medium/${meta.id}/img`;
         } else {
-          poster = 'https://images.metahub.space/poster/medium/tt0000000/img';
+          poster = generateStremioTitlePoster(title, feed.icon ? `${feed.icon} ${feed.addonName}` : '⚡ STREMIO');
         }
       }
 
@@ -651,8 +722,8 @@ export async function fetchStremioFeedItems(feed) {
       return {
         id: meta.id,
         imdb_id: meta.id,
-        title: meta.name || meta.title || 'Untitled',
-        name: meta.name || meta.title || 'Untitled',
+        title: title,
+        name: title,
         type: type,
         media_type: type,
         poster: poster,
