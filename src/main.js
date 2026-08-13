@@ -27,7 +27,9 @@ import {
   toggleCloudStreamPlugin,
   toggleCloudStreamRepo,
   POPULAR_CLOUDSTREAM_REPOS_PRESETS,
-  getCloudStreamVideoMeta
+  getCloudStreamVideoMeta,
+  fetchLiveCloudStreamPluginItems,
+  VERIFIED_ADULT_STREAMS_CATALOG
 } from './utils/apiManager.js';
 import {
   isProxyActive,
@@ -368,7 +370,58 @@ async function loadExploreCatalog(reset = true) {
 
     let response;
     // Determine fetch route based on state
-    if (state.searchQuery) {
+    if (state.selectedGenreId === '18plus') {
+      const activePlugins = getCloudStreamPlugins().filter(p => p.active !== false);
+      let adultItems = [];
+      for (const p of activePlugins) {
+        try {
+          const pItems = await fetchLiveCloudStreamPluginItems(p);
+          if (pItems && pItems.length > 0) {
+            adultItems.push(...pItems);
+          }
+        } catch (_) {}
+      }
+      if (adultItems.length === 0) {
+        adultItems = VERIFIED_ADULT_STREAMS_CATALOG.map(v => ({
+          id: `cs_catalog_${v.id}`,
+          title: v.title,
+          name: v.title,
+          poster: v.thumb,
+          posterUrl: v.thumb,
+          backdrop_path: v.thumb,
+          vote_average: parseFloat(v.rate) ? parseFloat(v.rate) * 2 : 8.8,
+          release_date: '2025',
+          type: 'movie',
+          duration: v.duration,
+          views: v.views,
+          embedUrl: `https://www.eporner.com/embed/${v.id}/`,
+          directUrl: `https://www.eporner.com/embed/${v.id}/`,
+          isCloudStream: true,
+          isNsfw: true,
+          providerName: 'Verified Adult Stream',
+          icon: '🔞'
+        }));
+      }
+
+      // Deduplicate
+      const seen = new Set();
+      adultItems = adultItems.filter(item => {
+        const key = item.embedUrl || item.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      const perPage = 20;
+      const startIdx = (state.explorePage - 1) * perPage;
+      const paginated = adultItems.slice(startIdx, startIdx + perPage);
+      response = {
+        results: paginated,
+        page: state.explorePage,
+        total_pages: Math.ceil(adultItems.length / perPage),
+        total_results: adultItems.length
+      };
+    } else if (state.searchQuery) {
       response = await tmdb.searchMulti(state.searchQuery, state.explorePage);
     } else {
       response = await tmdb.discoverMovies(state.explorePage, state.selectedGenreId, state.selectedLanguage);
@@ -901,6 +954,32 @@ async function handleInfoClick(id, type) {
       itemDetails = { ...id };
     } else if (typeof actualId === 'string' && actualId.startsWith('cs_')) {
       itemDetails = getCloudStreamVideoMeta(actualId);
+      if (!itemDetails) {
+        const parts = actualId.split('_');
+        const rawId = parts[parts.length - 1];
+        const matched = VERIFIED_ADULT_STREAMS_CATALOG.find(v => v.id === rawId);
+        if (matched) {
+          itemDetails = {
+            id: actualId,
+            title: matched.title,
+            name: matched.title,
+            poster: matched.thumb,
+            posterUrl: matched.thumb,
+            backdrop_path: matched.thumb,
+            overview: `Adult Video Stream · Duration: ${matched.duration} · Views: ${(matched.views || 0).toLocaleString()} · 1080p Ultra HD`,
+            vote_average: parseFloat(matched.rate) ? parseFloat(matched.rate) * 2 : 8.8,
+            release_date: '2025',
+            type: 'movie',
+            duration: matched.duration,
+            views: matched.views,
+            embedUrl: `https://www.eporner.com/embed/${matched.id}/`,
+            directUrl: `https://www.eporner.com/embed/${matched.id}/`,
+            isCloudStream: true,
+            isNsfw: true,
+            providerName: 'CloudStream Engine'
+          };
+        }
+      }
     }
 
     if (!itemDetails) {
@@ -973,6 +1052,32 @@ async function handleWatchClick(id, type) {
       itemDetails = { ...id };
     } else if (typeof actualId === 'string' && actualId.startsWith('cs_')) {
       itemDetails = getCloudStreamVideoMeta(actualId);
+      if (!itemDetails) {
+        const parts = actualId.split('_');
+        const rawId = parts[parts.length - 1];
+        const matched = VERIFIED_ADULT_STREAMS_CATALOG.find(v => v.id === rawId);
+        if (matched) {
+          itemDetails = {
+            id: actualId,
+            title: matched.title,
+            name: matched.title,
+            poster: matched.thumb,
+            posterUrl: matched.thumb,
+            backdrop_path: matched.thumb,
+            overview: `Adult Video Stream · Duration: ${matched.duration} · Views: ${(matched.views || 0).toLocaleString()} · 1080p Ultra HD`,
+            vote_average: parseFloat(matched.rate) ? parseFloat(matched.rate) * 2 : 8.8,
+            release_date: '2025',
+            type: 'movie',
+            duration: matched.duration,
+            views: matched.views,
+            embedUrl: `https://www.eporner.com/embed/${matched.id}/`,
+            directUrl: `https://www.eporner.com/embed/${matched.id}/`,
+            isCloudStream: true,
+            isNsfw: true,
+            providerName: 'CloudStream Engine'
+          };
+        }
+      }
     }
 
     if (!itemDetails) {

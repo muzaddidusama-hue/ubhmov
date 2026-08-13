@@ -10,12 +10,12 @@ export function createMovieCard(item, mediaType, onClick, onRemove = null) {
   
   const rawTitle = item.title || item.name || 'Untitled';
   const title = escapeHTML(rawTitle);
-  const rawPosterUrl = item.poster_path ? tmdb.getImageUrl(item.poster_path, 'w342') : 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster';
+  const rawPosterUrl = item.poster || item.posterUrl || item.thumb || (item.poster_path ? tmdb.getImageUrl(item.poster_path, 'w342') : 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster');
   const posterUrl = sanitizeUrl(rawPosterUrl, 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster');
-  const rating = escapeHTML(item.vote_average ? item.vote_average.toFixed(1) : 'N/A');
-  const releaseYear = escapeHTML((item.release_date || item.first_air_date || '').split('-')[0] || '');
-  const type = (mediaType || (item.first_air_date ? 'tv' : 'movie')) === 'tv' ? 'tv' : 'movie';
-  const typeBadge = type === 'tv' ? 'TV' : 'Movie';
+  const rating = escapeHTML(item.vote_average ? (typeof item.vote_average === 'number' ? item.vote_average.toFixed(1) : item.vote_average) : 'N/A');
+  const releaseYear = escapeHTML(item.duration || (item.release_date || item.first_air_date || '').split('-')[0] || '');
+  const type = (mediaType || item.type || (item.first_air_date ? 'tv' : 'movie')) === 'tv' ? 'tv' : 'movie';
+  const typeBadge = item.isNsfw ? '🔞 18+' : (item.isAnime ? '🎌 Anime' : (item.isCloudStream ? '☁️ Stream' : (type === 'tv' ? 'TV' : 'Movie')));
   
   // Calculate watch progress indicator
   let progressHtml = '';

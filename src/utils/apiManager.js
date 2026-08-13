@@ -1,4 +1,4 @@
-import { CONFIG } from '../../config.js';
+﻿import { CONFIG } from '../../config.js';
 import { escapeHTML, sanitizeUrl } from './security.js';
 
 // Default built-in streaming server embed templates
@@ -112,7 +112,7 @@ export const DEFAULT_STREMIO_ADDONS = [
   },
   {
     id: 'onlyporn-addon',
-    name: '🔞 OnlyPorn Adult Video Streams',
+    name: 'ðŸ”ž OnlyPorn Adult Video Streams',
     description: 'Direct HD & 4K streams from Eporner, HQPorner, and major adult tube catalogs',
     manifestUrl: 'https://onlyporn.elfhosted.com/manifest.json',
     version: '1.2.0',
@@ -140,8 +140,8 @@ export const DEFAULT_STREMIO_ADDONS = [
 ];
 
 // ============================================================================
-// ☁️  DEBRID / CLOUD STREAM SERVICE INTEGRATION
-// Converts torrent infoHash → fast HTTPS direct streams playable in browser
+// â˜ï¸  DEBRID / CLOUD STREAM SERVICE INTEGRATION
+// Converts torrent infoHash â†’ fast HTTPS direct streams playable in browser
 // Supports: Real-Debrid, AllDebrid, TorBox, Premiumize
 // ============================================================================
 
@@ -149,7 +149,7 @@ const DEBRID_SERVICES = {
   realdebrid: {
     id: 'realdebrid',
     name: 'Real-Debrid',
-    icon: '🔴',
+    icon: 'ðŸ”´',
     apiBase: 'https://api.real-debrid.com/rest/1.0',
     tokenField: 'realdebrid_api_key',
     // Torrentio uses "debridoptions=realdebrid%3D{KEY}"
@@ -159,7 +159,7 @@ const DEBRID_SERVICES = {
   alldebrid: {
     id: 'alldebrid',
     name: 'AllDebrid',
-    icon: '🟡',
+    icon: 'ðŸŸ¡',
     apiBase: 'https://api.alldebrid.com/v4',
     tokenField: 'alldebrid_api_key',
     torrentioParam: (key) => `alldebrid=${key}`,
@@ -168,7 +168,7 @@ const DEBRID_SERVICES = {
   torbox: {
     id: 'torbox',
     name: 'TorBox',
-    icon: '📦',
+    icon: 'ðŸ“¦',
     apiBase: 'https://api.torbox.app/v1',
     tokenField: 'torbox_api_key',
     torrentioParam: (key) => `torbox=${key}`,
@@ -177,7 +177,7 @@ const DEBRID_SERVICES = {
   premiumize: {
     id: 'premiumize',
     name: 'Premiumize',
-    icon: '💎',
+    icon: 'ðŸ’Ž',
     apiBase: 'https://www.premiumize.me/api',
     tokenField: 'premiumize_api_key',
     torrentioParam: (key) => `premiumize=${key}`,
@@ -643,7 +643,7 @@ export async function fetchStremioStreams(imdbId, type = 'movie', season = 1, ep
 
           // Build a human-readable label
           const quality = s.name || s.title || `Stream ${idx + 1}`;
-          const sizeInfo = s.behaviorHints?.filename ? ` · ${s.behaviorHints.filename.substring(0, 40)}` : '';
+          const sizeInfo = s.behaviorHints?.filename ? ` Â· ${s.behaviorHints.filename.substring(0, 40)}` : '';
           
           // Build Stremio web player URL for torrent streams
           let stremioWebUrl = null;
@@ -687,7 +687,7 @@ export const POPULAR_STREMIO_ADDONS_PRESETS = [
     manifestUrl: 'https://torrentio.strem.fun/manifest.json',
     version: '1.0.13',
     tags: ['4K Streams', 'Debrid Support', 'Auto-Sync'],
-    icon: '⚡'
+    icon: 'âš¡'
   },
   {
     id: 'cyberflix',
@@ -696,7 +696,7 @@ export const POPULAR_STREMIO_ADDONS_PRESETS = [
     manifestUrl: 'https://cyberflix.elfhosted.com/c/catalogs/manifest.json',
     version: '1.4.2',
     tags: ['OTT Platforms', 'Catalog', 'Popular'],
-    icon: '🎬'
+    icon: 'ðŸŽ¬'
   },
   {
     id: 'mediafusion',
@@ -705,7 +705,7 @@ export const POPULAR_STREMIO_ADDONS_PRESETS = [
     manifestUrl: 'https://mediafusion.elfhosted.com/manifest.json',
     version: '3.9.1',
     tags: ['Live Events', 'Scraper', 'Multi-Language'],
-    icon: '🛰️'
+    icon: 'ðŸ›°ï¸'
   },
   {
     id: 'comet',
@@ -714,7 +714,7 @@ export const POPULAR_STREMIO_ADDONS_PRESETS = [
     manifestUrl: 'https://comet.elfhosted.com/manifest.json',
     version: '1.2.0',
     tags: ['Ultra-Fast', 'Debrid', 'HDR/DV'],
-    icon: '☄️'
+    icon: 'â˜„ï¸'
   },
   {
     id: 'opensubtitles',
@@ -723,7 +723,7 @@ export const POPULAR_STREMIO_ADDONS_PRESETS = [
     manifestUrl: 'https://opensubtitles-v3.strem.io/manifest.json',
     version: '1.0.0',
     tags: ['Subtitles', 'Multi-Language', 'Official'],
-    icon: '💬'
+    icon: 'ðŸ’¬'
   },
   {
     id: 'cinemeta',
@@ -732,7 +732,7 @@ export const POPULAR_STREMIO_ADDONS_PRESETS = [
     manifestUrl: 'https://v3-cinemeta.strem.io/manifest.json',
     version: '3.0.12',
     tags: ['Metadata', 'IMDB Mappings', 'Official'],
-    icon: '🍿'
+    icon: 'ðŸ¿'
   },
   {
     id: 'anime-kitsu',
@@ -741,7 +741,7 @@ export const POPULAR_STREMIO_ADDONS_PRESETS = [
     manifestUrl: 'https://anime-kitsu.strem.fun/manifest.json',
     version: '1.0.4',
     tags: ['Anime', 'Kitsu.io', 'Japanese/Sub'],
-    icon: '🎌'
+    icon: 'ðŸŽŒ'
   },
   {
     id: 'thepiratebay-plus',
@@ -750,7 +750,7 @@ export const POPULAR_STREMIO_ADDONS_PRESETS = [
     manifestUrl: 'https://thepiratebay-plus.strem.fun/manifest.json',
     version: '2.0.0',
     tags: ['TPB', 'Community', 'Streams'],
-    icon: '🏴‍☠️'
+    icon: 'ðŸ´â€â˜ ï¸'
   }
 ];
 
@@ -794,7 +794,7 @@ export const STREMIO_CATALOG_CHANNELS = [
     id: 'movie_top',
     name: 'Top Stremio Movies',
     type: 'movie',
-    icon: '🍿',
+    icon: 'ðŸ¿',
     endpoint: 'https://v3-cinemeta.strem.io/catalog/movie/top.json',
     description: 'Trending and top-rated movies indexed across Stremio manifests'
   },
@@ -802,7 +802,7 @@ export const STREMIO_CATALOG_CHANNELS = [
     id: 'series_top',
     name: 'Popular Series',
     type: 'tv',
-    icon: '📺',
+    icon: 'ðŸ“º',
     endpoint: 'https://v3-cinemeta.strem.io/catalog/series/top.json',
     description: 'Top-rated TV series with multi-season stream options'
   },
@@ -810,7 +810,7 @@ export const STREMIO_CATALOG_CHANNELS = [
     id: 'cyberflix_netflix',
     name: 'Netflix Feeds',
     type: 'movie',
-    icon: '🎬',
+    icon: 'ðŸŽ¬',
     endpoint: 'https://cyberflix.elfhosted.com/c/catalogs/catalog/movie/netflix.json',
     description: 'Curated Netflix library streams fetched via CyberFlix'
   },
@@ -818,7 +818,7 @@ export const STREMIO_CATALOG_CHANNELS = [
     id: 'cyberflix_apple',
     name: 'Apple TV+ Originals',
     type: 'movie',
-    icon: '🍏',
+    icon: 'ðŸ',
     endpoint: 'https://cyberflix.elfhosted.com/c/catalogs/catalog/movie/apple.json',
     description: 'Apple TV+ exclusive cinema streams'
   }
@@ -832,7 +832,7 @@ export const STREMIO_CATALOG_CHANNELS = [
 /**
  * Generates an SVG poster for Stremio items that lack external poster art
  */
-export function generateStremioTitlePoster(title, badgeText = '⚡ STREMIO') {
+export function generateStremioTitlePoster(title, badgeText = 'âš¡ STREMIO') {
   const safeTitle = (title || 'Video Title').substring(0, 45).replace(/[<>&"]/g, '');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="342" height="513" viewBox="0 0 342 513">
     <defs>
@@ -908,7 +908,7 @@ export async function fetchLiveAddonCatalogItems(addon) {
   const storedCatalogs = Array.isArray(addon.catalogs) ? addon.catalogs : [];
   const catalogs = liveCatalogs.length > 0 ? liveCatalogs : storedCatalogs;
 
-  // This addon is a pure stream scraper — no catalog endpoints exist
+  // This addon is a pure stream scraper â€” no catalog endpoints exist
   if (!catalogs || catalogs.length === 0) {
     return [];
   }
@@ -919,7 +919,7 @@ export async function fetchLiveAddonCatalogItems(addon) {
     const rawType = cat.type || 'movie';
     const catId = cat.id || 'top';
     const isAdult = rawType === 'other' || ['porn','xxx','adult','hentai'].some(k => rawType.toLowerCase().includes(k) || catId.toLowerCase().includes(k) || (cat.name || '').toLowerCase().includes(k));
-    const icon = isAdult ? '🔞' : (rawType === 'movie' ? '🍿' : (rawType === 'series' || rawType === 'tv' ? '📺' : '🎬'));
+    const icon = isAdult ? 'ðŸ”ž' : (rawType === 'movie' ? 'ðŸ¿' : (rawType === 'series' || rawType === 'tv' ? 'ðŸ“º' : 'ðŸŽ¬'));
 
     const feed = {
       feedId: `${addon.id}_${rawType}_${catId}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
@@ -928,7 +928,7 @@ export async function fetchLiveAddonCatalogItems(addon) {
       rawType,
       catalogType: rawType === 'series' ? 'tv' : 'movie',
       catalogId: catId,
-      catalogName: cat.name ? `${addon.name} — ${cat.name}` : `${addon.name} — ${rawType} ${catId}`,
+      catalogName: cat.name ? `${addon.name} â€” ${cat.name}` : `${addon.name} â€” ${rawType} ${catId}`,
       endpoint: `${baseUrl}/catalog/${rawType}/${catId}.json`,
       icon
     };
@@ -1003,7 +1003,7 @@ export function getActiveAddonCatalogFeeds() {
         const rawType = cat.type || 'movie';
         const catId = cat.id || 'top';
         const isAdult = ['porn','xxx','adult','hentai','other'].some(k => rawType.toLowerCase().includes(k) || catId.toLowerCase().includes(k) || (cat.name||'').toLowerCase().includes(k));
-        const icon = isAdult ? '🔞' : (rawType === 'movie' ? '🍿' : (rawType === 'series' || rawType === 'tv' ? '📺' : '🎬'));
+        const icon = isAdult ? 'ðŸ”ž' : (rawType === 'movie' ? 'ðŸ¿' : (rawType === 'series' || rawType === 'tv' ? 'ðŸ“º' : 'ðŸŽ¬'));
         feeds.push({
           feedId: `${addon.id}_${rawType}_${catId}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
           addonId: addon.id,
@@ -1023,13 +1023,13 @@ export function getActiveAddonCatalogFeeds() {
         feedId: 'cinemeta_movie_top', addonId: addon.id, addonName: addon.name,
         rawType: 'movie', catalogType: 'movie', catalogId: 'top',
         catalogName: `${addon.name} - Top Movies`,
-        endpoint: `${baseUrl}/catalog/movie/top.json`, icon: '🍿', addonManifestUrl: addon.manifestUrl
+        endpoint: `${baseUrl}/catalog/movie/top.json`, icon: 'ðŸ¿', addonManifestUrl: addon.manifestUrl
       });
       feeds.push({
         feedId: 'cinemeta_series_top', addonId: addon.id, addonName: addon.name,
         rawType: 'series', catalogType: 'tv', catalogId: 'top',
         catalogName: `${addon.name} - Popular TV Series`,
-        endpoint: `${baseUrl}/catalog/series/top.json`, icon: '📺', addonManifestUrl: addon.manifestUrl
+        endpoint: `${baseUrl}/catalog/series/top.json`, icon: 'ðŸ“º', addonManifestUrl: addon.manifestUrl
       });
     }
     // Stream-only scrapers (no catalogs) are excluded from static feeds;
@@ -1124,7 +1124,7 @@ export async function fetchStremioFeedItems(feed) {
         if (imdbId && String(imdbId).startsWith('tt')) {
           poster = `https://images.metahub.space/poster/medium/${imdbId}/img`;
         } else {
-          poster = generateStremioTitlePoster(title, feed.icon ? `${feed.icon} ${feed.addonName}` : '⚡ STREMIO');
+          poster = generateStremioTitlePoster(title, feed.icon ? `${feed.icon} ${feed.addonName}` : 'âš¡ STREMIO');
         }
       }
 
@@ -1329,7 +1329,7 @@ export async function runAddonHealthAndCapabilityCheck() {
   };
 }
 // ============================================================================
-// ☁️  CLOUDSTREAM REPOSITORIES & EXTENSION PLUGINS SYSTEM
+// â˜ï¸  CLOUDSTREAM REPOSITORIES & EXTENSION PLUGINS SYSTEM
 // Supports installing repositories like https://codeberg.org/cloudstream/cs3xxx-repo/raw/branch/dev/repo.json
 // Supports Codeberg API/Raw, GitHub Raw, and custom JSON repo.json / plugins.json endpoints
 // ============================================================================
@@ -1337,43 +1337,43 @@ export async function runAddonHealthAndCapabilityCheck() {
 export const POPULAR_CLOUDSTREAM_REPOS_PRESETS = [
   {
     id: 'cs-gizlikeyif-nsfw',
-    name: '🔞 Cs-GizliKeyif Multi-NSFW',
+    name: 'ðŸ”ž Cs-GizliKeyif Multi-NSFW',
     description: 'Massive adult extension repository with 35+ providers including 18EU, 3XChina, AdultDeepFakes, AdultTvChannels, Aki, MissAV, Pornhub, Xvideos, and more.',
     url: 'https://raw.githubusercontent.com/Kraptor123/Cs-GizliKeyif/builds/plugins.json',
     tags: ['Adult', 'NSFW', '35+ Providers', 'JAV/Tube'],
-    icon: '🔞'
+    icon: 'ðŸ”ž'
   },
   {
     id: 'cs3xxx-nsfw',
-    name: '🔞 CS3XXX NSFW Providers',
+    name: 'ðŸ”ž CS3XXX NSFW Providers',
     description: 'Premier adult content extension repository featuring JavFree, JavGuru, JavHD, JavSub, Pornhub, Xvideos, and more.',
     url: 'https://codeberg.org/cloudstream/cs3xxx-repo/raw/branch/dev/repo.json',
     tags: ['Adult', 'NSFW', 'JAV', 'Tube Sites'],
-    icon: '🔞'
+    icon: 'ðŸ”ž'
   },
   {
     id: 'hexated-english',
-    name: '🎬 Hexated English Providers',
+    name: 'ðŸŽ¬ Hexated English Providers',
     description: 'Popular high-speed English streaming scrapers and movie/series catalog providers.',
     url: 'https://raw.githubusercontent.com/hexated/cloudstream-extensions-hexated/builds/repo.json',
     tags: ['Movies', 'TV Series', 'English', 'HD'],
-    icon: '🎬'
+    icon: 'ðŸŽ¬'
   },
   {
     id: 'stormunblessed-anime',
-    name: '🎌 Stormunblessed Anime & Media',
+    name: 'ðŸŽŒ Stormunblessed Anime & Media',
     description: 'Complete anime and multi-source streaming scrapers repository with sub/dub filtering.',
     url: 'https://raw.githubusercontent.com/stormunblessed/cloudstream-extensions/builds/repo.json',
     tags: ['Anime', 'Movies', 'Sub/Dub'],
-    icon: '🎌'
+    icon: 'ðŸŽŒ'
   },
   {
     id: 'megarepo-global',
-    name: '🌍 Megarepo (Multi-Language)',
+    name: 'ðŸŒ Megarepo (Multi-Language)',
     description: 'Comprehensive multi-language repository indexing providers across multiple regions and genres.',
     url: 'https://raw.githubusercontent.com/Rowdy-Avocado/Megarepo/builds/repo.json',
     tags: ['Global', 'Multi-Language', 'Megarepo'],
-    icon: '🌍'
+    icon: 'ðŸŒ'
   }
 ];
 
@@ -1507,7 +1507,7 @@ export const DEFAULT_CLOUDSTREAM_PLUGINS = [
   {
     id: 'cs_default_javhd',
     repoId: 'cs_repo_cs3xxx',
-    repoName: '🔞 CS3XXX NSFW Providers',
+    repoName: 'ðŸ”ž CS3XXX NSFW Providers',
     name: 'JavHD Provider',
     internalName: 'JavHD',
     description: 'High definition JAV video streams and catalog',
@@ -1521,7 +1521,7 @@ export const DEFAULT_CLOUDSTREAM_PLUGINS = [
   {
     id: 'cs_default_javsub',
     repoId: 'cs_repo_cs3xxx',
-    repoName: '🔞 CS3XXX NSFW Providers',
+    repoName: 'ðŸ”ž CS3XXX NSFW Providers',
     name: 'JavSub Provider',
     internalName: 'JavSub',
     description: 'High quality JAV with English subtitles',
@@ -1535,7 +1535,7 @@ export const DEFAULT_CLOUDSTREAM_PLUGINS = [
   {
     id: 'cs_default_pornhub',
     repoId: 'cs_repo_cs3xxx',
-    repoName: '🔞 CS3XXX NSFW Providers',
+    repoName: 'ðŸ”ž CS3XXX NSFW Providers',
     name: 'Pornhub Provider',
     internalName: 'Pornhub',
     description: 'Top trending 4K & HD adult tube video streams',
@@ -1549,7 +1549,7 @@ export const DEFAULT_CLOUDSTREAM_PLUGINS = [
   {
     id: 'cs_default_xvideos',
     repoId: 'cs_repo_cs3xxx',
-    repoName: '🔞 CS3XXX NSFW Providers',
+    repoName: 'ðŸ”ž CS3XXX NSFW Providers',
     name: 'Xvideos Provider',
     internalName: 'Xvideos',
     description: 'Best free NSFW video streams and top clips',
@@ -1563,7 +1563,7 @@ export const DEFAULT_CLOUDSTREAM_PLUGINS = [
   {
     id: 'cs_default_stormunblessed',
     repoId: 'cs_repo_anime',
-    repoName: '🎌 Stormunblessed Anime',
+    repoName: 'ðŸŽŒ Stormunblessed Anime',
     name: 'Stormunblessed Anime',
     internalName: 'Stormunblessed',
     description: 'Trending anime series and sub/dub episodes',
@@ -1634,7 +1634,7 @@ export async function installCloudStreamRepo(repoUrl) {
     const urlParts = cleanUrl.split('/');
     const repoIndex = urlParts.indexOf('raw.githubusercontent.com') > -1 ? urlParts[urlParts.indexOf('raw.githubusercontent.com') + 2] : '';
     const repoTitle = repoIndex ? decodeURIComponent(repoIndex) : (repoData[0]?.repositoryUrl ? 'Cs-GizliKeyif' : 'CloudStream Plugins');
-    repoName = `🔞 ${repoTitle}`;
+    repoName = `ðŸ”ž ${repoTitle}`;
     repoDesc = `Collection of ${repoData.length} CloudStream plugins`;
   } 
   // CASE 2: The fetched file is a repo.json object
@@ -1814,72 +1814,1957 @@ export function toggleCloudStreamRepo(repoId, active) {
 // Verified Live Adult Streams Dataset (Real CDN Thumbnails & Active Stream Embeds)
 // ============================================================================
 export const VERIFIED_ADULT_STREAMS_CATALOG = [
-  { id: "fG1bpDJRNUy", title: "4k The Best Japanese Tits Ever (Decensored)", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17554588/4_360.jpg", duration: "38:45", views: 1084804, rate: "4.16", category: "4k" },
-  { id: "k0yoqOtb0kY", title: "Japanese Stepmom Is Feeling Horny 4k (Decensored)", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17481581/2_360.jpg", duration: "38:46", views: 1342879, rate: "4.23", category: "4k" },
-  { id: "8RndDSyBUI3", title: "4k 60fps 40mbps Ultra HD Special Feature Scene", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17696173/10_360.jpg", duration: "72:25", views: 224575, rate: "4.79", category: "4k" },
-  { id: "yOuzu8ArTjG", title: "Mia Melano 4k BBC Bedroom Scene", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17852296/2_360.jpg", duration: "20:45", views: 35416, rate: "4.45", category: "4k" },
-  { id: "cQBSgNlbgDH", title: "Best Philippines Movie Romance & Erotic Cinema [4K]", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/138/13801869/11_360.jpg", duration: "103:08", views: 1316387, rate: "4.25", category: "4k" },
-  { id: "wh6C41W0IFF", title: "4K Big Tits Asian MILF On The Bus (Decensored)", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17560921/13_360.jpg", duration: "38:45", views: 258581, rate: "4.26", category: "4k" },
-  { id: "RBIsWVpWSKG", title: "Busty Violet Myers 2160p 4K Ultra Feature Scene", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/170/17000123/1_360.jpg", duration: "54:40", views: 509537, rate: "4.73", category: "4k" },
-  { id: "t9Hyrqa43MC", title: "Hot Japanese Amateur Teen POV (Uncensored)", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17853688/2_360.jpg", duration: "62:33", views: 29744, rate: "3.94", category: "4k" },
-  { id: "dB7g9GaqMZj", title: "[4K] FC2 PPV Tokyo Sensational Idol Showcase", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17841769/3_360.jpg", duration: "74:15", views: 38543, rate: "4.66", category: "4k" },
-  { id: "U3yVoo5Zo1n", title: "Sayuri Hayama [Uncensored] Housewives Big Tits Stepmom Special", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17818644/1_360.jpg", duration: "128:36", views: 511594, rate: "4.29", category: "japanese" },
-  { id: "BDgshxh6hmG", title: "Tina Nanami [Uncensored] Stepmom Threesome Sensational", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17837026/14_360.jpg", duration: "123:18", views: 309882, rate: "4.31", category: "japanese" },
-  { id: "nRDkdErzoTN", title: "JUR-754 [ENG SUB] Tina Nanami Lifelong Wish Granted", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17819553/3_360.jpg", duration: "117:06", views: 326568, rate: "4.37", category: "japanese" },
-  { id: "yFoVWFexeJz", title: "Nao Satsuki Every Night Sister Is Loud During Sex", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17720080/10_360.jpg", duration: "148:39", views: 658566, rate: "4.43", category: "japanese" },
-  { id: "PBv3OoewlsW", title: "Karin Kitaoka [Chinese Subtitles Uncensored] Teens Special", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17803297/9_360.jpg", duration: "120:12", views: 286351, rate: "4.22", category: "japanese" },
-  { id: "zOT9TXEVQsH", title: "Sexy Japanese Hottie Sucks & Fucks", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17704796/11_360.jpg", duration: "44:09", views: 493356, rate: "3.87", category: "japanese" },
-  { id: "gKSC8oOhNdc", title: "FN-S224 Megami Jun (English Subtitles Decensored)", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17681890/3_360.jpg", duration: "35:27", views: 662657, rate: "4.27", category: "japanese" },
-  { id: "WfpZTClJOud", title: "Rin Kinoshita [Chinese Subtitles Uncensored] Housewives Mature", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17779868/12_360.jpg", duration: "141:07", views: 291110, rate: "4.18", category: "japanese" },
-  { id: "i3Oa8EZgoCl", title: "Jav English Subtitle 1989 WankZone Special Edition", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17823861/9_360.jpg", duration: "124:47", views: 130240, rate: "3.93", category: "jav" },
-  { id: "K5mS51RviWo", title: "SDMF-029 JAV Special Idol Series", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17447983/4_360.jpg", duration: "110:42", views: 695561, rate: "4.40", category: "jav" },
-  { id: "KvYZJJfU8as", title: "Uno Kanaya JUL-788 Decensored Showcase", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17562563/4_360.jpg", duration: "160:09", views: 542698, rate: "4.26", category: "jav" },
-  { id: "3g0iSTjKi1T", title: "Jav English Subtitle 1947 Collector Edition", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17757546/9_360.jpg", duration: "121:44", views: 353915, rate: "4.29", category: "jav" },
-  { id: "3KGzhV9pgaJ", title: "(RM) Wife Seduced By Husband - Momoko Isshiki", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17550065/12_360.jpg", duration: "153:06", views: 567890, rate: "4.47", category: "jav" },
-  { id: "0nrhEHgHeh6", title: "Yuko Ono FSDSS-673 Decensored Faleno Star", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17562634/10_360.jpg", duration: "124:40", views: 271503, rate: "4.38", category: "jav" },
-  { id: "j3GwVt9Jg9d", title: "In Front Of Her Husband Midsummer Night Hana Haruna", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/133/13367988/9_360.jpg", duration: "105:59", views: 3798582, rate: "4.25", category: "jav" },
-  { id: "jDSMG1OjqUs", title: "(Eng Sub) Forbidden Urge Overlap Momoko Isshiki", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/14/140/14073014/15_360.jpg", duration: "147:46", views: 2722078, rate: "4.49", category: "jav" },
-  { id: "8V0LXhBGn6L", title: "JUQ-103 ENG SUB Busty Aunt Ride My Cock", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17819313/13_360.jpg", duration: "118:04", views: 77963, rate: "4.27", category: "jav" },
-  { id: "NVOqSmhJzed", title: "My Wife Is Seduced By Group Sayuri Hayama", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/135/13537745/6_360.jpg", duration: "123:59", views: 1447290, rate: "4.23", category: "jav" },
-  { id: "ZLgWWTRBYcH", title: "Cantik Tetenya Gede Banget Amateur Special", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17574209/3_360.jpg", duration: "9:41", views: 1716126, rate: "4.22", category: "amateur" },
-  { id: "b1FGWZeKxpx", title: "Stepsister Fantasy Bedroom Creampie Scene", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17785551/2_360.jpg", duration: "33:50", views: 293232, rate: "4.28", category: "amateur" },
-  { id: "pZjDamJUBXe", title: "PAWG Loves BBC Verified Amateur Romance", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17803681/9_360.jpg", duration: "22:50", views: 328511, rate: "4.34", category: "amateur" },
-  { id: "ZGrL9NcbhIQ", title: "Izzy Green Squirt Orgasm Verified Scene", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17682624/13_360.jpg", duration: "15:30", views: 833500, rate: "4.59", category: "amateur" },
-  { id: "CS2wgwLVeBo", title: "Stepmom Making Her Beloved Stepson Cum Hard", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17655393/6_360.jpg", duration: "20:22", views: 891429, rate: "4.48", category: "amateur" },
-  { id: "wakdMdJpSJ8", title: "Celva Full Durasi Desah Maut Crot Dalam", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17542393/5_360.jpg", duration: "17:02", views: 1187574, rate: "4.43", category: "amateur" },
-  { id: "rf51e2TNvoa", title: "My Boyfriends Dad Is Sick Naughty Bedroom", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17755751/15_360.jpg", duration: "27:49", views: 489504, rate: "4.62", category: "amateur" },
-  { id: "tdcAV190OJP", title: "Surprise Roommate Sex Naughty Encounter", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17777725/5_360.jpg", duration: "26:11", views: 303882, rate: "4.34", category: "amateur" },
-  { id: "zR2ieuIlpNI", title: "Hanezuki Noa [Chinese Subtitles] Threesome Teens", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17819075/12_360.jpg", duration: "160:04", views: 219220, rate: "4.25", category: "chinese" },
-  { id: "3LtJd1MwBAB", title: "Kinoshita Rin [Chinese Subtitles] Mature Housewives Stepmom", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17775341/4_360.jpg", duration: "128:03", views: 243980, rate: "4.25", category: "chinese" },
-  { id: "H6C1F9cFWeU", title: "Anzai Rara SSNI-700 [Chinese Subtitles] Big Tits Orgy", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17717110/12_360.jpg", duration: "152:42", views: 369820, rate: "4.22", category: "chinese" },
-  { id: "5Mrq8HNdH1L", title: "Tsumugi Akari SONE-385C [Chinese Subtitles] Outdoor Public", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17703634/6_360.jpg", duration: "120:02", views: 308230, rate: "4.24", category: "chinese" },
-  { id: "68yWmGAYluG", title: "Mino Suzume [Chinese Subtitles] DLDSS-419 Swapping NTR Hot Spring", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/168/16899236/12_360.jpg", duration: "150:50", views: 195717, rate: "4.31", category: "chinese" },
-  { id: "2suhkZEDqXw", title: "Meguri [Chinese Subtitles] Housewives Hardcore Big Tits", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17759861/1_360.jpg", duration: "150:19", views: 181169, rate: "4.30", category: "chinese" },
-  { id: "ySrSDy205Xk", title: "Ayazuki Nana [Chinese Subtitles] Stepsister Teens Hardcore", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17853227/1_360.jpg", duration: "121:04", views: 67320, rate: "4.09", category: "chinese" },
-  { id: "9wEcyqfrzdb", title: "Toono Miho [Chinese Subtitles] Teens Threesome Students", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17779815/9_360.jpg", duration: "227:53", views: 123159, rate: "4.17", category: "chinese" },
-  { id: "QxyPP4Ej3H2", title: "Pussy Fingering Sensational Orgasm Hentai", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17735045/9_360.jpg", duration: "14:23", views: 114180, rate: "4.38", category: "hentai" },
-  { id: "wM3tYYW9aOB", title: "Got My Mother In Law Pregnant With My Seed", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/161/16149507/13_360.jpg", duration: "28:05", views: 1318583, rate: "4.48", category: "hentai" },
-  { id: "gKxXbZQXx8C", title: "Jealousy And Erection Excitement Rental Wife Akemi", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/132/13294165/7_360.jpg", duration: "97:31", views: 3552759, rate: "4.17", category: "hentai" },
-  { id: "Xx18y5SZhqu", title: "Reze Rides Dick 3D Animation Special", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17519465/3_360.jpg", duration: "8:06", views: 120986, rate: "4.70", category: "hentai" },
-  { id: "OqnzQKdOiGt", title: "Darkest Secret In Abandoned Building (Hentai Anime)", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17833431/15_360.jpg", duration: "7:01", views: 36447, rate: "4.20", category: "hentai" },
-  { id: "ivLyEGJwHzn", title: "Super Boobs Celebrity 03 Nagi Hikaru English Subtitles", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/12/127/12700112/3_360.jpg", duration: "182:57", views: 2284535, rate: "4.41", category: "hentai" },
-  { id: "bb6JS8DLG6Y", title: "Younger Sister Immature Small Breasts Part 2", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/133/13388324/10_360.jpg", duration: "108:19", views: 2549145, rate: "4.27", category: "hentai" },
-  { id: "DcIwCxvwDiz", title: "Bridgette B Stepson Hot Anal Sex With Stepmom", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/5/56/567/5679645/5_360.jpg", duration: "43:06", views: 267584, rate: "4.53", category: "hentai" },
-  { id: "XFckvrETdXt", title: "Venezuelan Beauty Big Ass Latina Creampie", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17617517/15_360.jpg", duration: "35:59", views: 989113, rate: "4.43", category: "creampie" },
-  { id: "Wy2prqVavMH", title: "My Wife Best Friend Night Pool Creampied Chiharu Mitsuha", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17576473/9_360.jpg", duration: "153:05", views: 976151, rate: "4.36", category: "creampie" },
-  { id: "12s7GtaPWYu", title: "Waka Misono ADN-749 HD Pretty Natural Creampie", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17683179/8_360.jpg", duration: "115:43", views: 621871, rate: "4.37", category: "creampie" },
-  { id: "08mTpeHKf0S", title: "Petite Asian In Red Lingerie Creampied", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17687412/4_360.jpg", duration: "36:08", views: 777628, rate: "4.43", category: "creampie" },
-  { id: "cKdnBXo42wP", title: "D50D-012 Miu Shiromine Uncensored Creampie", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17826036/5_360.jpg", duration: "164:51", views: 171187, rate: "4.23", category: "creampie" },
-  { id: "XvmvIR5Tf5y", title: "Step Bro Cums Twice In My Big Ass Thicc Pussy", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17705268/10_360.jpg", duration: "36:16", views: 333209, rate: "4.50", category: "creampie" },
-  { id: "8q8LuEjSuZY", title: "Si Ea Binira Ng Sobrang Sobra MILF", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17563334/4_360.jpg", duration: "5:09", views: 1607424, rate: "4.35", category: "milf" },
-  { id: "ypXmeqqmWbv", title: "Crazy Sexy Body MILF Naughty Bedroom", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17759007/8_360.jpg", duration: "93:11", views: 282780, rate: "4.20", category: "milf" },
-  { id: "32LstcVGULH", title: "Latest Indian MMS Bedroom Romance", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17563773/3_360.jpg", duration: "17:53", views: 509399, rate: "4.61", category: "milf" },
-  { id: "fFcZQ7rjEpN", title: "Spanish Cleopatra Passion Erotic Feature", thumb: "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17730472/8_360.jpg", duration: "28:49", views: 391035, rate: "4.51", category: "milf" }
+    {
+        "id":  "i3Oa8EZgoCl",
+        "title":  "Jav English Sub-title 1989 - WankZone",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17823861/9_360.jpg",
+        "duration":  "124:47",
+        "views":  130380,
+        "rate":  "3.93",
+        "cat":  "jav"
+    },
+    {
+        "id":  "K5mS51RviWo",
+        "title":  "SDMF 029 - JAv",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17447983/4_360.jpg",
+        "duration":  "110:42",
+        "views":  695643,
+        "rate":  "4.40",
+        "cat":  "jav"
+    },
+    {
+        "id":  "KvYZJJfU8as",
+        "title":  "(sub Indo) Uno Kanaya JUL-788 Decen",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17562563/4_360.jpg",
+        "duration":  "160:09",
+        "views":  542758,
+        "rate":  "4.26",
+        "cat":  "jav"
+    },
+    {
+        "id":  "3g0iSTjKi1T",
+        "title":  "Jav English Sub-title 1947 - WankZone",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17757546/9_360.jpg",
+        "duration":  "121:44",
+        "views":  354018,
+        "rate":  "4.29",
+        "cat":  "jav"
+    },
+    {
+        "id":  "3KGzhV9pgaJ",
+        "title":  "(RM) Wife Seduced By Daughter\u0027s Husband - Momoko Isshiki",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17550065/12_360.jpg",
+        "duration":  "153:06",
+        "views":  567972,
+        "rate":  "4.47",
+        "cat":  "jav"
+    },
+    {
+        "id":  "0nrhEHgHeh6",
+        "title":  "(sub indo) Yuko Ono FSDSS-673 decen",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17562634/10_360.jpg",
+        "duration":  "124:40",
+        "views":  271571,
+        "rate":  "4.38",
+        "cat":  "jav"
+    },
+    {
+        "id":  "j3GwVt9Jg9d",
+        "title":  "(RM) In Front Of Her Husband  A Midsummer Night\u0027s Nightmare   Hana Haruna",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/133/13367988/9_360.jpg",
+        "duration":  "105:59",
+        "views":  3798672,
+        "rate":  "4.25",
+        "cat":  "jav"
+    },
+    {
+        "id":  "jDSMG1OjqUs",
+        "title":  "(Eng Sub) The moment her husband leaves, in just 2 seconds their lips and body overlap, mother-son\u0027s forbidden urge that cannot be suppressed - Momoko Isshiki",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/14/140/14073014/15_360.jpg",
+        "duration":  "147:46",
+        "views":  2722151,
+        "rate":  "4.49",
+        "cat":  "jav"
+    },
+    {
+        "id":  "8V0LXhBGn6L",
+        "title":  "JUQ-103 ENG SUB BUSTY AUNT BBW RIDE MY COCK",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17819313/13_360.jpg",
+        "duration":  "118:04",
+        "views":  78054,
+        "rate":  "4.27",
+        "cat":  "jav"
+    },
+    {
+        "id":  "NVOqSmhJzed",
+        "title":  "My Wife Is Seduced By A Group Of Dirty, Extremely Thick, Big-cocked Young Men From The Countryside. Sayuri Hayama",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/135/13537745/6_360.jpg",
+        "duration":  "123:59",
+        "views":  1447335,
+        "rate":  "4.23",
+        "cat":  "jav"
+    },
+    {
+        "id":  "XQZznx5Xusa",
+        "title":  "Jav English Sub-title 2109 - WankZone",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17842358/14_360.jpg",
+        "duration":  "120:19",
+        "views":  48581,
+        "rate":  "4.07",
+        "cat":  "jav"
+    },
+    {
+        "id":  "gKxXbZQXx8C",
+        "title":  "Jealousy And Erection And Excitement Rental Wife Akemi",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/132/13294165/7_360.jpg",
+        "duration":  "97:31",
+        "views":  3552810,
+        "rate":  "4.17",
+        "cat":  "jav"
+    },
+    {
+        "id":  "DjkrakOxwGD",
+        "title":  "MARLBOROQUEENSEX - PEMBUATAN FILM BOKEP JAV",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/5/52/527/5274473/12_360.jpg",
+        "duration":  "0:25",
+        "views":  1000964,
+        "rate":  "4.39",
+        "cat":  "jav"
+    },
+    {
+        "id":  "2U2lnPYvrXX",
+        "title":  "JAV English Sub-Titles 321 - WankZone",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17541701/14_360.jpg",
+        "duration":  "153:50",
+        "views":  670649,
+        "rate":  "4.16",
+        "cat":  "jav"
+    },
+    {
+        "id":  "LHhp8vQNocz",
+        "title":  "Jav English Sub-title 2040 - WankZone",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17817831/14_360.jpg",
+        "duration":  "119:50",
+        "views":  45113,
+        "rate":  "4.44",
+        "cat":  "jav"
+    },
+    {
+        "id":  "U3yVoo5Zo1n",
+        "title":  "èå±±ããã [Uncensored] , Housewives, Big Tits, Pornstar, Japanese, Stepmom, Squirt, Anal, Milf",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17818644/1_360.jpg",
+        "duration":  "128:36",
+        "views":  512250,
+        "rate":  "4.29",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "BDgshxh6hmG",
+        "title":  "ä¸æµ·ãã£ã   [Uncensored], Stepmom, Threesome, Students, Big Tits, Pornstar, Japanese, Anal, Massage",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17837026/14_360.jpg",
+        "duration":  "123:18",
+        "views":  310799,
+        "rate":  "4.30",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "PBv3OoewlsW",
+        "title":  "åå²¡ææ  [Chinese Subtitles Uncensored] å¤©é¦¬å¯ , Teens, Threesome, Stepsister, Pornstar, Japanese, Group Sex, Squirt, Students",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17803297/9_360.jpg",
+        "duration":  "120:12",
+        "views":  286562,
+        "rate":  "4.22",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "WfpZTClJOud",
+        "title":  "æ¨ä¸åã\u0085å­  [Chinese Subtitles Uncensored] , Housewives, Hardcore, Mature, Japanese, Students, Office, Squirt, Anal",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17779868/12_360.jpg",
+        "duration":  "141:07",
+        "views":  291369,
+        "rate":  "4.18",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "ubhhgKumME7",
+        "title":  "å¤§æ§»ã²ã³ã[Uncensored] , Pornstar, Hotwife, Japanese, Threesome, Orgy, Anal, Group Sex, Squirt, Stepmom",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17735150/4_360.jpg",
+        "duration":  "136:07",
+        "views":  465295,
+        "rate":  "4.16",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "zR2ieuIlpNI",
+        "title":  "ç¾½æä¹è¼ [Chinese Subtitles Uncensored], Threesome, Teens, Big Tits, Pornstar, Japanese, Squirt, Anal, Group Sex",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17819075/12_360.jpg",
+        "duration":  "160:04",
+        "views":  219583,
+        "rate":  "4.25",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "JJ3xVVXJmGc",
+        "title":  "ä¸æãã  MFYD-130 [Uncensored] , Threesome, Hardcore, Housewives, Big Tits, Pornstar, Japanese, Massage, Anal, Squirt",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17752074/4_360.jpg",
+        "duration":  "137:14",
+        "views":  464931,
+        "rate":  "4.06",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "3LtJd1MwBAB",
+        "title":  "æ¨ä¸ååå­ [Chinese Subtitles Uncensored] , Mature, Pornstar, Housewives, Japanese, Stepmom, Anal, Squirt, Milf",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17775341/4_360.jpg",
+        "duration":  "128:03",
+        "views":  244091,
+        "rate":  "4.25",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "YIbzZltPcFF",
+        "title":  "ç¾ååè± [Uncensored] , Threesome, Orgy, Big Tits, Housewives, Anal, Group Sex, Squirt, Japanese",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17795548/5_360.jpg",
+        "duration":  "125:18",
+        "views":  116985,
+        "rate":  "3.99",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "V4o7zsYLEbT",
+        "title":  "éç©ºã²ã [Uncensored] , Teens, Stepsister, Japanese, Housewives, Squirt, Threesome, Anal, Group Sex",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17795574/7_360.jpg",
+        "duration":  "121:44",
+        "views":  121810,
+        "rate":  "4.36",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "H6C1F9cFWeU",
+        "title":  "å®é½ãã SSNI-700 [Chinese Subtitles Uncensored]  Big Tits, Threesome, Pornstar, Orgy",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17717110/12_360.jpg",
+        "duration":  "152:42",
+        "views":  369907,
+        "rate":  "4.22",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "6WkTnRA2Ur9",
+        "title":  "æ¬é´ç±é  [Uncensored]  , Big Tits, Mature, Pornstar, Stepmom, Japanese, Housewives, Squirt, Anal",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17788411/1_360.jpg",
+        "duration":  "132:16",
+        "views":  179781,
+        "rate":  "4.39",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "LnGgEgZZY8N",
+        "title":  "å¼¥çã¿ã¥ã [Uncensored] æµå·èå¤®, Threesome, Stepsister, Big Tits, Japanese, Pornstar, Teens, Squirt, Anal",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17836979/3_360.jpg",
+        "duration":  "164:49",
+        "views":  90098,
+        "rate":  "4.32",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "5Mrq8HNdH1L",
+        "title":  "åªã²ãã SONE 385C U [Chinese Subtitles Uncensored] , Pornstar, Outdoor, Public, Japanese, Big Tits, Office, Group Sex, Threesome, Hardcore",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17703634/6_360.jpg",
+        "duration":  "120:02",
+        "views":  308293,
+        "rate":  "4.24",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "ZruDZqAQ390",
+        "title":  "3 busty escape from bad lands HTMS100RM Uncensored",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/152/15245965/13_360.jpg",
+        "duration":  "100:23",
+        "views":  2096758,
+        "rate":  "4.32",
+        "cat":  "japanese"
+    },
+    {
+        "id":  "68yWmGAYluG",
+        "title":  "ç¾ä¹ããã[Chinese Subtitles Uncensored]DLDSS-419 Swapping NTR â Hot Spring Trip With Big-Titted Wives Swapped To Break The Boredom",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/168/16899236/12_360.jpg",
+        "duration":  "150:50",
+        "views":  195890,
+        "rate":  "4.31",
+        "cat":  "chinese"
+    },
+    {
+        "id":  "2suhkZEDqXw",
+        "title":  "ããã  [Chinese Subtitles Uncensored] , Housewives, Hardcore, Pornstar, Big Tits, Japanese, Threesome, Group Sex, Office, Squirt",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17759861/1_360.jpg",
+        "duration":  "150:19",
+        "views":  181235,
+        "rate":  "4.30",
+        "cat":  "chinese"
+    },
+    {
+        "id":  "ySrSDy205Xk",
+        "title":  "å½©æä¸ç· [Chinese Subtitles Uncensored, Stepsister, Big Tits, Pornstar, Teens, Japanese, Squirt, Anal, Hardcore",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17853227/1_360.jpg",
+        "duration":  "121:04",
+        "views":  67417,
+        "rate":  "4.09",
+        "cat":  "chinese"
+    },
+    {
+        "id":  "9wEcyqfrzdb",
+        "title":  "ééæªå¸  [Chinese Subtitles Uncensored] , Teens, Threesome, Pornstar, Students, Big Tits, Japanese, Group Sex, Orgy, Squirt",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17779815/9_360.jpg",
+        "duration":  "227:53",
+        "views":  123221,
+        "rate":  "4.17",
+        "cat":  "chinese"
+    },
+    {
+        "id":  "vaX5vgUGXCK",
+        "title":  "å¼¥çã¿ã¥ã[Chinese Subtitles Uncensored]DASS-090 A Black Man Homestay NTR Edition",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/168/16867257/2_360.jpg",
+        "duration":  "119:15",
+        "views":  1031026,
+        "rate":  "3.65",
+        "cat":  "chinese"
+    },
+    {
+        "id":  "BdpQtFEvEOv",
+        "title":  "å½©æä¸ç·  [Chinese Subtitles Uncensored] , Teens, Big Tits, Japanese, Pornstar, Threesome, Group Sex, Anal, Squirt",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17825398/8_360.jpg",
+        "duration":  "134:29",
+        "views":  67316,
+        "rate":  "4.18",
+        "cat":  "chinese"
+    },
+    {
+        "id":  "tRhcb7eHH7a",
+        "title":  "ããã  [Chinese Subtitles Uncensored] , Housewives, Big Tits, Pornstar, Hardcore, Threesome, Japanese, Anal, Squirt",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17881983/10_360.jpg",
+        "duration":  "136:24",
+        "views":  48433,
+        "rate":  "3.96",
+        "cat":  "chinese"
+    },
+    {
+        "id":  "ZLgWWTRBYcH",
+        "title":  "Udah Cantik Tetenya Gede Banget",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17574209/3_360.jpg",
+        "duration":  "9:41",
+        "views":  1716509,
+        "rate":  "4.22",
+        "cat":  "asian"
+    },
+    {
+        "id":  "Ym5a1wu1YpY",
+        "title":  "Muntik Mahuli Napa Tiktok Bigla",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17826266/14_360.jpg",
+        "duration":  "2:02",
+        "views":  225202,
+        "rate":  "4.14",
+        "cat":  "asian"
+    },
+    {
+        "id":  "wakdMdJpSJ8",
+        "title":  "Celva Full Durasi Desah Maut Crot Dalam",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17542393/5_360.jpg",
+        "duration":  "17:02",
+        "views":  1187759,
+        "rate":  "4.43",
+        "cat":  "asian"
+    },
+    {
+        "id":  "zOT9TXEVQsH",
+        "title":  "Sexu Japanese Hottie Sucks \u0026 Fucks A Buff Arabic Dude",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17704796/11_360.jpg",
+        "duration":  "44:09",
+        "views":  493533,
+        "rate":  "3.87",
+        "cat":  "asian"
+    },
+    {
+        "id":  "32LstcVGULH",
+        "title":  "Latest Indian mms",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17563773/3_360.jpg",
+        "duration":  "17:53",
+        "views":  509702,
+        "rate":  "4.61",
+        "cat":  "asian"
+    },
+    {
+        "id":  "WjMXAXurqqF",
+        "title":  "Viral Laras Tiktok, ABG Cute VCS Spill Toket Sama Memeknya",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17720886/3_360.jpg",
+        "duration":  "7:14",
+        "views":  515334,
+        "rate":  "4.33",
+        "cat":  "asian"
+    },
+    {
+        "id":  "jmWG3ezoXWN",
+        "title":  "Monic Teriak Ajing Sakin Enaknya Punya Kamu Sayang",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17774923/8_360.jpg",
+        "duration":  "23:59",
+        "views":  307181,
+        "rate":  "4.24",
+        "cat":  "asian"
+    },
+    {
+        "id":  "HECM9AD95Mn",
+        "title":  "Abang Disiksa Tante Girang Dan Brutal",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17748542/7_360.jpg",
+        "duration":  "16:55",
+        "views":  378893,
+        "rate":  "4.29",
+        "cat":  "asian"
+    },
+    {
+        "id":  "v2Mo6EFV8UV",
+        "title":  "New update shakira",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/171/17194626/2_360.jpg",
+        "duration":  "2:41",
+        "views":  870209,
+        "rate":  "4.12",
+        "cat":  "asian"
+    },
+    {
+        "id":  "2yH6ev3q5OZ",
+        "title":  "Tante Jilbab Toket Gede Gada Obat.",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17695203/14_360.jpg",
+        "duration":  "4:48",
+        "views":  552894,
+        "rate":  "4.45",
+        "cat":  "asian"
+    },
+    {
+        "id":  "qdbGI2Zb1Dd",
+        "title":  "Bokep Rifda Busui Dientot Kasar ASInya Mancur Deras Banget",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17574311/4_360.jpg",
+        "duration":  "5:47",
+        "views":  870264,
+        "rate":  "4.41",
+        "cat":  "asian"
+    },
+    {
+        "id":  "w68qFbWIUWO",
+        "title":  "Bokep Ngentot Ada Percakapan Cewe Highclass Cantik Banget Sangean di Entot Tukang Bajigur Yang Berbohong Ngakunya Pemilik Mitra MBG Padahal Miskin Hehe",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17617693/2_360.jpg",
+        "duration":  "20:28",
+        "views":  737165,
+        "rate":  "4.34",
+        "cat":  "asian"
+    },
+    {
+        "id":  "Xt23WMCwHYq",
+        "title":  "Ngentot Cewek Meki Sempit",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17708435/8_360.jpg",
+        "duration":  "7:02",
+        "views":  433614,
+        "rate":  "3.88",
+        "cat":  "asian"
+    },
+    {
+        "id":  "pK5mQytxMed",
+        "title":  "lagi viral di x 9 januari 2026 Full di",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/157/15704172/15_360.jpg",
+        "duration":  "3:28",
+        "views":  3806206,
+        "rate":  "4.34",
+        "cat":  "asian"
+    },
+    {
+        "id":  "WceGrs9QWnd",
+        "title":  "Selingkuh Kontol Besar",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17851568/8_360.jpg",
+        "duration":  "10:38",
+        "views":  141210,
+        "rate":  "3.99",
+        "cat":  "asian"
+    },
+    {
+        "id":  "fG1bpDJRNUy",
+        "title":  "4k The Best Japanese Tits Ever (Decensored)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17554588/4_360.jpg",
+        "duration":  "38:45",
+        "views":  1085178,
+        "rate":  "4.16",
+        "cat":  "4k"
+    },
+    {
+        "id":  "k0yoqOtb0kY",
+        "title":  "Japanese Stepmom Is Feeling Horny 4k (Decensored)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17481581/2_360.jpg",
+        "duration":  "38:46",
+        "views":  1343121,
+        "rate":  "4.23",
+        "cat":  "4k"
+    },
+    {
+        "id":  "8RndDSyBUI3",
+        "title":  "4k, 60fps, 40mbps, 20gb And 15 Hours Of My Life, Please Download It",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17696173/10_360.jpg",
+        "duration":  "72:25",
+        "views":  224675,
+        "rate":  "4.79",
+        "cat":  "4k"
+    },
+    {
+        "id":  "yOuzu8ArTjG",
+        "title":  "Mia Melano 4k BBC Bedroom Scene",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17852296/2_360.jpg",
+        "duration":  "20:45",
+        "views":  35463,
+        "rate":  "4.45",
+        "cat":  "4k"
+    },
+    {
+        "id":  "cQBSgNlbgDH",
+        "title":  "Best philippines movie sex \u0026 romantic [4K]",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/138/13801869/11_360.jpg",
+        "duration":  "103:08",
+        "views":  1316438,
+        "rate":  "4.25",
+        "cat":  "4k"
+    },
+    {
+        "id":  "wh6C41W0IFF",
+        "title":  "4K Big Tits Asian MILF On The Bus (Decensored)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17560921/13_360.jpg",
+        "duration":  "38:45",
+        "views":  258633,
+        "rate":  "4.26",
+        "cat":  "4k"
+    },
+    {
+        "id":  "RBIsWVpWSKG",
+        "title":  "20.11.23.Busty Violet Myers Gets Dicked Down_2160p",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/170/17000123/1_360.jpg",
+        "duration":  "54:40",
+        "views":  509584,
+        "rate":  "4.73",
+        "cat":  "4k"
+    },
+    {
+        "id":  "t9Hyrqa43MC",
+        "title":  "4k. Hot Japanse Amateur Teen POV Fuck (Uncensored)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17853688/2_360.jpg",
+        "duration":  "62:33",
+        "views":  29788,
+        "rate":  "3.94",
+        "cat":  "4k"
+    },
+    {
+        "id":  "N7sifA6alG3",
+        "title":  "KAAMBALI BAI KE SATH SEX",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/130/13035781/3_360.jpg",
+        "duration":  "18:58",
+        "views":  730375,
+        "rate":  "4.20",
+        "cat":  "4k"
+    },
+    {
+        "id":  "dB7g9GaqMZj",
+        "title":  "[4K[ FC2 PPV 4147114",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17841769/3_360.jpg",
+        "duration":  "74:15",
+        "views":  38575,
+        "rate":  "4.66",
+        "cat":  "4k"
+    },
+    {
+        "id":  "Sn9QxqiqEDP",
+        "title":  "[4K] FC2 PPV 3121790",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17786211/2_360.jpg",
+        "duration":  "58:57",
+        "views":  69195,
+        "rate":  "4.41",
+        "cat":  "4k"
+    },
+    {
+        "id":  "CIdHdr3450i",
+        "title":  "PARAYOGAM S01EP01 Malayalam Takla Buddha Sex With His Daughter Hot Web Series 2026 4K",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17789191/11_360.jpg",
+        "duration":  "35:41",
+        "views":  63121,
+        "rate":  "4.52",
+        "cat":  "4k"
+    },
+    {
+        "id":  "4AE4C7JUsdI",
+        "title":  "[4K] FC2 PPV 3966770",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17850492/3_360.jpg",
+        "duration":  "101:03",
+        "views":  31013,
+        "rate":  "4.47",
+        "cat":  "4k"
+    },
+    {
+        "id":  "7R0dKhUT2DH",
+        "title":  "A gentle mother is secretly shown a huge cock and rubbed against her bare crotch. Her frustrated pussy, which has been lacking in sexual desire, is smoothly penetrated in front of her husband. Her soft post-partum hole feels so good that he cums inside he",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17693964/12_360.jpg",
+        "duration":  "193:38",
+        "views":  107133,
+        "rate":  "4.41",
+        "cat":  "4k"
+    },
+    {
+        "id":  "q9TiMx8dmsF",
+        "title":  "She Flirted And Cheated On Her Husband On Vacation With A Stranger Guy, But She Is So Beautiful Feat. Jonny, Elina Lizz â Hotel, Missionary, Cowgirl, Big Natural Tits, Babe 4K Porn",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17672913/10_360.jpg",
+        "duration":  "15:58",
+        "views":  100975,
+        "rate":  "4.38",
+        "cat":  "4k"
+    },
+    {
+        "id":  "xQLIAkhEMCB",
+        "title":  "GYM FUCK 1080P REUP",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17712315/14_360.jpg",
+        "duration":  "29:22",
+        "views":  151384,
+        "rate":  "4.56",
+        "cat":  "hd"
+    },
+    {
+        "id":  "1vhau9E8lUg",
+        "title":  "My Wife\u0027s Breasts Bruised By My Boss Natsuko Mishima",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/12/121/12193563/2_360.jpg",
+        "duration":  "90:23",
+        "views":  1902679,
+        "rate":  "4.28",
+        "cat":  "hd"
+    },
+    {
+        "id":  "vgWxnQjIX0J",
+        "title":  "Gharwali Episode 4",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/173/17333297/15_360.jpg",
+        "duration":  "36:34",
+        "views":  529707,
+        "rate":  "4.31",
+        "cat":  "hd"
+    },
+    {
+        "id":  "wWRL143CtWr",
+        "title":  "every Chinese girl after the party will have sex - Asian Amateur Premium Porn",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/169/16963649/13_360.jpg",
+        "duration":  "7:05",
+        "views":  514543,
+        "rate":  "4.45",
+        "cat":  "hd"
+    },
+    {
+        "id":  "7MMM8vxABhn",
+        "title":  "Room No 69 Episode 1",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/170/17072468/14_360.jpg",
+        "duration":  "20:31",
+        "views":  609421,
+        "rate":  "4.12",
+        "cat":  "hd"
+    },
+    {
+        "id":  "rJvYAhRQW1J",
+        "title":  "abby rose a hairdresser s gentle touch obsesses her young client_",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/135/13566620/15_360.jpg",
+        "duration":  "44:51",
+        "views":  1163980,
+        "rate":  "4.47",
+        "cat":  "hd"
+    },
+    {
+        "id":  "Rw9qYUJHwUX",
+        "title":  "My Friend\u0027s Wife Nana Aida",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/11/117/11716160/1_360.jpg",
+        "duration":  "176:08",
+        "views":  1500728,
+        "rate":  "4.20",
+        "cat":  "hd"
+    },
+    {
+        "id":  "qlIW8bwDMV2",
+        "title":  "Compilation 46m worth of cumshots 1080p",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/8/87/877/8778483/11_360.jpg",
+        "duration":  "46:13",
+        "views":  629868,
+        "rate":  "3.98",
+        "cat":  "hd"
+    },
+    {
+        "id":  "e78klytknvt",
+        "title":  "My Father-In-Law\u0027s Tongue Licking Technique [Decensored] - Momo Sakura.part 1.",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/136/13695812/12_360.jpg",
+        "duration":  "68:02",
+        "views":  1460033,
+        "rate":  "4.32",
+        "cat":  "hd"
+    },
+    {
+        "id":  "E42ZYS0dNS7",
+        "title":  "Miu Shiromine Our Saliva Mixes Together The Presidents Secret Office For Kissing [Decensored] - Miu Satsuki.",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/136/13695852/1_360.jpg",
+        "duration":  "117:46",
+        "views":  1179818,
+        "rate":  "4.31",
+        "cat":  "hd"
+    },
+    {
+        "id":  "5HyZudPO5ai",
+        "title":  "Oshikawa Yuuri",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/11/117/11704853/11_360.jpg",
+        "duration":  "159:15",
+        "views":  3063131,
+        "rate":  "4.31",
+        "cat":  "hd"
+    },
+    {
+        "id":  "t5eToMZKR7z",
+        "title":  "Father And Step Daughter Obscene Sexual Pranks",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/12/120/12002713/10_360.jpg",
+        "duration":  "104:25",
+        "views":  573130,
+        "rate":  "4.48",
+        "cat":  "hd"
+    },
+    {
+        "id":  "Lfl2ekkXipR",
+        "title":  "Married Woman Personal Trainer Reverse Nt - Ryo Ayumi",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/138/13829258/4_360.jpg",
+        "duration":  "75:54",
+        "views":  1424747,
+        "rate":  "4.11",
+        "cat":  "hd"
+    },
+    {
+        "id":  "ElMAW84HDQv",
+        "title":  "Tutor Who Seduces A Virgin So That Studying Becomes Unmanageable [Decensored] Part 2_",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/131/13169972/1_360.jpg",
+        "duration":  "91:09",
+        "views":  897112,
+        "rate":  "4.33",
+        "cat":  "hd"
+    },
+    {
+        "id":  "DG1rUR5scvL",
+        "title":  "Big Butt Teen Anal Fucked 1080p",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/150/15087224/13_360.jpg",
+        "duration":  "33:14",
+        "views":  935906,
+        "rate":  "4.60",
+        "cat":  "hd"
+    },
+    {
+        "id":  "b1FGWZeKxpx",
+        "title":  "Stepsis",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17785551/2_360.jpg",
+        "duration":  "33:50",
+        "views":  293850,
+        "rate":  "4.28",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "nRDkdErzoTN",
+        "title":  "JUR-754 ENGLISH SUBTITLE TINA NANAMI I granted his lifelong wish and inserted it into him. Our chemistry was so amazing that I ended up asking for multiple rounds of unprotected sex.",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17819553/3_360.jpg",
+        "duration":  "117:06",
+        "views":  326799,
+        "rate":  "4.37",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "XFckvrETdXt",
+        "title":  "Venezuelan beauty Big Ass Latina Creampie",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17617517/15_360.jpg",
+        "duration":  "35:59",
+        "views":  989478,
+        "rate":  "4.43",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "yFoVWFexeJz",
+        "title":  "Nao Satsuki å½©æä¸ç·, Every Night, My Girlfriendâs Older Sister Is Loud During Sex, And While My Girlfriend Is Away, She  And  Cum Inside Her Multiple Times",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17720080/10_360.jpg",
+        "duration":  "148:39",
+        "views":  658837,
+        "rate":  "4.43",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "Wy2prqVavMH",
+        "title":  "My Wifeâs Best Friend â¤ï¸ Reverse NTRs Erotica \u0026 CoclOLD Story At The Night Pool ð¥ DL4D4S0S 440 ðð Cute Creampied CumSLUT Chiharu Mitsuha",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17576473/9_360.jpg",
+        "duration":  "153:05",
+        "views":  976364,
+        "rate":  "4.36",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "12s7GtaPWYu",
+        "title":  "[PB]Waka Misono ADN-749 HD: CK Lingerie Busty Feet Natural Toes - Pretty Huge Tits Sensual Missionary Sideways Spread Creampie",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17683179/8_360.jpg",
+        "duration":  "115:43",
+        "views":  622035,
+        "rate":  "4.37",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "08mTpeHKf0S",
+        "title":  "Petite Asian In Red Lingerie",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17687412/4_360.jpg",
+        "duration":  "36:08",
+        "views":  777884,
+        "rate":  "4.43",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "cKdnBXo42wP",
+        "title":  "D50D 012 MR Miu Shiromine",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17826036/5_360.jpg",
+        "duration":  "164:51",
+        "views":  171398,
+        "rate":  "4.23",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "XvmvIR5Tf5y",
+        "title":  "Step Bro Cums Twice in My Big Ass Thicc Pussy",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17705268/10_360.jpg",
+        "duration":  "36:16",
+        "views":  333449,
+        "rate":  "4.50",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "s47fz0yW4mN",
+        "title":  "My Mother in law Is So Much Better Than My Wife... Sayuri Hayama",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17508845/8_360.jpg",
+        "duration":  "127:39",
+        "views":  689010,
+        "rate":  "4.44",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "xokEQI0eA0g",
+        "title":  "ð\u0085â¿ð\u0085¡ð\u0085â¿ ð\u0085ð\u0085¡â¹ð\u0085£â¶ð\u0085¢ ð\u0085ð\u0085¥â¹ð\u0085£ð\u0085¡â¿",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17733309/14_360.jpg",
+        "duration":  "58:15",
+        "views":  320694,
+        "rate":  "4.66",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "r1lPhwlfK7p",
+        "title":  "I\u0027m gonna fuck my best friend\u0027s girlfriend! Hikari Tomoe",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17834691/14_360.jpg",
+        "duration":  "137:46",
+        "views":  123014,
+        "rate":  "4.27",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "6L1MycycFqR",
+        "title":  "ã03ã58 year old Mature Woman Slut Had An Unspeakable Affair With Her Daughter\u0027s Boyfriend.ãChisato Shoda   ç¿ç°åé   ãããã ã¡ãã¨ã",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17725099/7_360.jpg",
+        "duration":  "12:02",
+        "views":  352637,
+        "rate":  "4.19",
+        "cat":  "creampie"
+    },
+    {
+        "id":  "tdcAV190OJP",
+        "title":  "Surprise Roommate Sex",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17777725/5_360.jpg",
+        "duration":  "26:11",
+        "views":  304237,
+        "rate":  "4.34",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "paSY3ox43je",
+        "title":  "Sul 41",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17705330/2_360.jpg",
+        "duration":  "5:14",
+        "views":  421542,
+        "rate":  "4.61",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "kvXjjvzj7vA",
+        "title":  "Footlong BBC Bangs \u0026 Creampies Busty PAWG POV",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17604429/14_360.jpg",
+        "duration":  "41:17",
+        "views":  929857,
+        "rate":  "4.52",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "wBJVnw6gvNi",
+        "title":  "Pawg Sex In Car",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17681852/6_360.jpg",
+        "duration":  "10:02",
+        "views":  517166,
+        "rate":  "4.53",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "wnfCktqIzLi",
+        "title":  "AMERICAN MARY",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17506705/8_360.jpg",
+        "duration":  "9:17",
+        "views":  729818,
+        "rate":  "4.21",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "16GrBsbAGoR",
+        "title":  "Sexy PAWG Pays Her BFs Dbts Off By Fucjing The Loan Sharks BLC",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17674901/15_360.jpg",
+        "duration":  "39:15",
+        "views":  445895,
+        "rate":  "4.27",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "kYAkev2phUk",
+        "title":  "Cute Pinay Teen Doggystyle In POV",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17511898/13_360.jpg",
+        "duration":  "3:41",
+        "views":  515987,
+        "rate":  "4.47",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "GcIPtmNlmUb",
+        "title":  "Ayuna Show Meki Josjis",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17756694/8_360.jpg",
+        "duration":  "13:13",
+        "views":  190417,
+        "rate":  "4.66",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "ItmBGzuCkTv",
+        "title":  "nafsu yang membaraâ­",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17431491/8_360.jpg",
+        "duration":  "8:54",
+        "views":  622112,
+        "rate":  "4.30",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "WeY1UNZfly3",
+        "title":  "Accidentally Creampied My Stepsister",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17754067/5_360.jpg",
+        "duration":  "38:36",
+        "views":  148433,
+        "rate":  "4.60",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "Mjp8zbS6Pc8",
+        "title":  "Sweet And Delicious Vietnamese Pinay Teen Daughter Pussy",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/161/16176341/7_360.jpg",
+        "duration":  "4:53",
+        "views":  1466897,
+        "rate":  "4.38",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "fGddufDZ4qQ",
+        "title":  "Cute Girl",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17717151/5_360.jpg",
+        "duration":  "6:09",
+        "views":  349336,
+        "rate":  "4.41",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "tEtNAxrGpse",
+        "title":  "Bokep Viral 23 Mei. Cewek Tocil Mabuk Langsung Dua Kntol",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/171/17183224/14_360.jpg",
+        "duration":  "22:26",
+        "views":  900218,
+        "rate":  "4.38",
+        "cat":  "amateur"
+    },
+    {
+        "id":  "QxyPP4Ej3H2",
+        "title":  "Pussy fingering",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17735045/9_360.jpg",
+        "duration":  "14:23",
+        "views":  114231,
+        "rate":  "4.38",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "wM3tYYW9aOB",
+        "title":  "Finally, I Got My Mother in law Pregnant With My Seed",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/161/16149507/13_360.jpg",
+        "duration":  "28:05",
+        "views":  1318665,
+        "rate":  "4.48",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "Xx18y5SZhqu",
+        "title":  "Reze Rides Dick",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17519465/3_360.jpg",
+        "duration":  "8:06",
+        "views":  121063,
+        "rate":  "4.70",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "OqnzQKdOiGt",
+        "title":  "The Darkest Secret Found in an Abandoned Building, Rave Impregnated(Hentai Anime 2026)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17833431/15_360.jpg",
+        "duration":  "7:01",
+        "views":  36491,
+        "rate":  "4.17",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "ivLyEGJwHzn",
+        "title":  "Super Boobs Celebrity 03 Nagi Hikaru English Subtitles",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/12/127/12700112/3_360.jpg",
+        "duration":  "182:57",
+        "views":  2284578,
+        "rate":  "4.41",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "bb6JS8DLG6Y",
+        "title":  "Younger Sister\u0027s Immature Small Breasts 2",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/133/13388324/10_360.jpg",
+        "duration":  "108:19",
+        "views":  2549188,
+        "rate":  "4.27",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "r4KfVSaYd4I",
+        "title":  "INDONESIA VIRAL TUDUNG TOBRUT BANGET",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/13/139/13955214/2_360.jpg",
+        "duration":  "1:21",
+        "views":  681601,
+        "rate":  "4.25",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "DcIwCxvwDiz",
+        "title":  "Bridgette B - Stepson Hot Anal Sex With Stepmom",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/5/56/567/5679645/5_360.jpg",
+        "duration":  "43:06",
+        "views":  267595,
+        "rate":  "4.53",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "VIYsPEEcx6h",
+        "title":  "Viral cewe tobrut colmek sampe banjir",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/153/15309163/7_360.jpg",
+        "duration":  "3:09",
+        "views":  287576,
+        "rate":  "4.40",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "CyEMS3j0jvE",
+        "title":  "Hot girl with big boobs having hardcore sex",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17802971/8_360.jpg",
+        "duration":  "9:35",
+        "views":  25055,
+        "rate":  "3.67",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "Pk9JvEQJyrr",
+        "title":  "Lena âthe âplug âdoggy âstyle âcreampie âSee âEverything âAt â",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17856411/9_360.jpg",
+        "duration":  "5:43",
+        "views":  23601,
+        "rate":  "2.68",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "AjOqSl33Aev",
+        "title":  "Sister Breeder Ep 1-4",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/170/17071960/6_360.jpg",
+        "duration":  "64:53",
+        "views":  288159,
+        "rate":  "4.45",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "F6c219M5YmN",
+        "title":  "UNCENSORED HENTAI Koi Maguwai FULL EPISODE",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/12/120/12073787/14_360.jpg",
+        "duration":  "25:32",
+        "views":  622540,
+        "rate":  "4.38",
+        "cat":  "hentai"
+    },
+    {
+        "id":  "tVFY5h0hUEx",
+        "title":  "Chubby BBW MILF Working Hard at the Gym with Her BWC Trainer - AI Generated",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/171/17141509/15_360.jpg",
+        "duration":  "6:24",
+        "views":  185810,
+        "rate":  "4.16",
+        "cat":  "3d"
+    },
+    {
+        "id":  "8VvRmfFJEOC",
+        "title":  "Mature Granny Seduces Virgin Boy with her Huge breasts and Ass (3D Anime) 2026",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/168/16802028/14_360.jpg",
+        "duration":  "6:22",
+        "views":  228934,
+        "rate":  "4.54",
+        "cat":  "3d"
+    },
+    {
+        "id":  "wmh1zpqYyoR",
+        "title":  "Hard Sex Party ! Sister Breeder Sex Scenes (Best Realiste Hentai Porn, Hentai Sex)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/165/16561878/9_360.jpg",
+        "duration":  "7:55",
+        "views":  364629,
+        "rate":  "3.91",
+        "cat":  "3d"
+    },
+    {
+        "id":  "uB3GyeDQh5r",
+        "title":  "Big Titted Stepmom teaches her Stepson how to Fuck (AI Porn)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/170/17041956/13_360.jpg",
+        "duration":  "8:49",
+        "views":  135941,
+        "rate":  "4.36",
+        "cat":  "3d"
+    },
+    {
+        "id":  "gFleyoHAFRM",
+        "title":  "Lovely Beauty Lesbians Exploring Their Sexuality (AI Generated)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/169/16957949/14_360.jpg",
+        "duration":  "8:14",
+        "views":  108708,
+        "rate":  "3.82",
+        "cat":  "3d"
+    },
+    {
+        "id":  "wS1flRkoYZg",
+        "title":  "Russian Girls getting Streched by Massive Interracial BBC\u0027s (AI Porn)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/172/17242499/9_360.jpg",
+        "duration":  "7:51",
+        "views":  59556,
+        "rate":  "4.17",
+        "cat":  "3d"
+    },
+    {
+        "id":  "nO5aGTYLzXa",
+        "title":  "Shorts Drop 6 - AI Futa Porn By Miro",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/164/16483138/13_360.jpg",
+        "duration":  "2:30",
+        "views":  184598,
+        "rate":  "4.40",
+        "cat":  "3d"
+    },
+    {
+        "id":  "OLBqLejxfFZ",
+        "title":  "Ultimate Cumshot, Cum Swallow, Blowjob Compilation (AI Generated)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/170/17079752/4_360.jpg",
+        "duration":  "8:40",
+        "views":  101002,
+        "rate":  "3.57",
+        "cat":  "3d"
+    },
+    {
+        "id":  "aVrJcED2dCL",
+        "title":  "Chubby Indian Beauty Fucked Hard in Old Temples (AI Generated) Full",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/167/16770578/15_360.jpg",
+        "duration":  "8:05",
+        "views":  90703,
+        "rate":  "4.55",
+        "cat":  "3d"
+    },
+    {
+        "id":  "bJopvyWRBsY",
+        "title":  "Big Tit Brunette Fucked ~ AI-Generated",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/14/144/14416794/8_360.jpg",
+        "duration":  "10:27",
+        "views":  712517,
+        "rate":  "4.44",
+        "cat":  "3d"
+    },
+    {
+        "id":  "4k5YQna8Jqa",
+        "title":  "[3D Animation] Anime Style 3D NTR Village Boys 1 6",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/14/141/14181332/15_360.jpg",
+        "duration":  "32:10",
+        "views":  328494,
+        "rate":  "4.66",
+        "cat":  "3d"
+    },
+    {
+        "id":  "ckcJhyLClZ4",
+        "title":  "[3D Animation] Housewife\u0027s Desire Series 1 VAM Milf Big Tits Chicken Coop Ahegao",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/14/141/14185650/15_360.jpg",
+        "duration":  "58:47",
+        "views":  378503,
+        "rate":  "4.48",
+        "cat":  "3d"
+    },
+    {
+        "id":  "EEBseZEHtt1",
+        "title":  "Hot and Rough Sex On a Cold Winter Evening: FERN x STARK HENTAI Parody",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/157/15732377/14_360.jpg",
+        "duration":  "10:13",
+        "views":  71211,
+        "rate":  "4.60",
+        "cat":  "3d"
+    },
+    {
+        "id":  "0y1agWOvCOw",
+        "title":  "\"GANGBANG HIGHT SCHOOL\" Best hentai at school  treesome porn \u0026 deepthroat (anime sex, anime porn) Part 2 by JXHXN teen, 3d, AI, teens, big ass, hentai, big tits, big boobs, tifa, video game, hentais 3d, porn final fantasy, 3d cartoon, 3d hentai, tifa lock",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/12/122/12255321/10_360.jpg",
+        "duration":  "15:32",
+        "views":  260558,
+        "rate":  "3.85",
+        "cat":  "3d"
+    },
+    {
+        "id":  "8q8LuEjSuZY",
+        "title":  "Si Ea ay aking binira ng sobrang sobra",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17563334/4_360.jpg",
+        "duration":  "5:09",
+        "views":  1607805,
+        "rate":  "4.35",
+        "cat":  "milf"
+    },
+    {
+        "id":  "CS2wgwLVeBo",
+        "title":  "Stepmom Making Her Beloved Stepson Cum",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17655393/6_360.jpg",
+        "duration":  "20:22",
+        "views":  891816,
+        "rate":  "4.48",
+        "cat":  "milf"
+    },
+    {
+        "id":  "ypXmeqqmWbv",
+        "title":  "Crazy Sexy Body",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17759007/8_360.jpg",
+        "duration":  "93:11",
+        "views":  283090,
+        "rate":  "4.20",
+        "cat":  "milf"
+    },
+    {
+        "id":  "fFcZQ7rjEpN",
+        "title":  "Spanish Cleopatra",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17730472/8_360.jpg",
+        "duration":  "28:49",
+        "views":  391285,
+        "rate":  "4.51",
+        "cat":  "milf"
+    },
+    {
+        "id":  "smFhpN08wg8",
+        "title":  "Big Titty Step-Mom Sex Accident",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17623080/11_360.jpg",
+        "duration":  "23:53",
+        "views":  639811,
+        "rate":  "4.59",
+        "cat":  "milf"
+    },
+    {
+        "id":  "IRMmwepUjIZ",
+        "title":  "Yoga MILF Stud Ride",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17746660/14_360.jpg",
+        "duration":  "37:35",
+        "views":  520366,
+        "rate":  "4.31",
+        "cat":  "milf"
+    },
+    {
+        "id":  "RuocpAWa8wO",
+        "title":  "Naughty Stepson VI",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17757006/4_360.jpg",
+        "duration":  "26:13",
+        "views":  302139,
+        "rate":  "4.38",
+        "cat":  "milf"
+    },
+    {
+        "id":  "5g0a0GkxdG0",
+        "title":  "Obey My Step-Son",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17677400/5_360.jpg",
+        "duration":  "119:38",
+        "views":  366092,
+        "rate":  "4.42",
+        "cat":  "stepmom"
+    },
+    {
+        "id":  "4HPa2OiSVCc",
+        "title":  "Divorced mom comes home drunk and horny",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17459873/9_360.jpg",
+        "duration":  "46:00",
+        "views":  279084,
+        "rate":  "4.70",
+        "cat":  "stepmom"
+    },
+    {
+        "id":  "lr7z0W0cW0p",
+        "title":  "Tante Farah Ngntot Siang Hari",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17772178/9_360.jpg",
+        "duration":  "29:19",
+        "views":  180415,
+        "rate":  "4.23",
+        "cat":  "stepmom"
+    },
+    {
+        "id":  "EXurtRly8rI",
+        "title":  "èå±±ããã [Uncensored], Big Tits, Housewives, Stepmom, Threesome, Japanese, Anal, Squirt, Group Sex",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17873480/7_360.jpg",
+        "duration":  "115:09",
+        "views":  65728,
+        "rate":  "4.52",
+        "cat":  "stepmom"
+    },
+    {
+        "id":  "rf51e2TNvoa",
+        "title":  "My Boyfriends Dad Is Sick",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17755751/15_360.jpg",
+        "duration":  "27:49",
+        "views":  489820,
+        "rate":  "4.62",
+        "cat":  "stepsister"
+    },
+    {
+        "id":  "JTnMdrSdlgz",
+        "title":  "Beautiful Boobs 01",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17447964/15_360.jpg",
+        "duration":  "24:07",
+        "views":  725358,
+        "rate":  "4.34",
+        "cat":  "stepsister"
+    },
+    {
+        "id":  "kPjBHHBi4LA",
+        "title":  "Kontol Bang Junaidi Di Kulum Bergantian Full",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17637167/4_360.jpg",
+        "duration":  "19:35",
+        "views":  403531,
+        "rate":  "4.32",
+        "cat":  "stepsister"
+    },
+    {
+        "id":  "IVSeczbBZ9r",
+        "title":  "Sharing A Room With British Step Sister , Frances Bentley",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17796881/15_360.jpg",
+        "duration":  "39:34",
+        "views":  109681,
+        "rate":  "4.12",
+        "cat":  "stepsister"
+    },
+    {
+        "id":  "33kOApTQlPv",
+        "title":  "Amateur Stepsister Sloppy Deepthroat Big Dick \u0026 Fingering Wet Pussy",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17546217/14_360.jpg",
+        "duration":  "9:37",
+        "views":  224064,
+        "rate":  "4.56",
+        "cat":  "stepsister"
+    },
+    {
+        "id":  "2KlUXvgbHWX",
+        "title":  "Huge Boobs Huge Ass Stepsis Shares Bed Wearing No Panties , Devil Khloe",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17698024/15_360.jpg",
+        "duration":  "34:08",
+        "views":  255060,
+        "rate":  "4.52",
+        "cat":  "stepsister"
+    },
+    {
+        "id":  "po2kApTkt4n",
+        "title":  "Percakapan Adek Minta Dikocokin Fefeknya",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17569961/14_360.jpg",
+        "duration":  "2:23",
+        "views":  323159,
+        "rate":  "4.41",
+        "cat":  "stepsister"
+    },
+    {
+        "id":  "skElrGYseBF",
+        "title":  "Sexy Beauty Anal 25",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17757245/6_360.jpg",
+        "duration":  "28:32",
+        "views":  119174,
+        "rate":  "4.54",
+        "cat":  "stepsister"
+    },
+    {
+        "id":  "FEUMpAA7mO9",
+        "title":  "å¤ç¾ããã [Uncensored], Teens, Big Tits, Stepsister, Pornstar, Japanese, Anal, Squirt, Students, Homemade",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17735453/12_360.jpg",
+        "duration":  "160:48",
+        "views":  120088,
+        "rate":  "4.48",
+        "cat":  "stepsister"
+    },
+    {
+        "id":  "Sr5vfYaMB8x",
+        "title":  "french scene fuck ass of a family girl",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/3/34/344/3445659/5_360.jpg",
+        "duration":  "3:19",
+        "views":  29477,
+        "rate":  "4.80",
+        "cat":  "erotic"
+    },
+    {
+        "id":  "WV8fRxcNnCP",
+        "title":  "Cinema Challenge, The Beginning - BBstories - Sissy Caption Story",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/12/122/12214830/10_360.jpg",
+        "duration":  "6:02",
+        "views":  62078,
+        "rate":  "4.23",
+        "cat":  "erotic"
+    },
+    {
+        "id":  "nxIcQ1VdzuK",
+        "title":  "Horrorporn urine Moriah mills Box truck Cervix Japanese rough uncensored Stella cox Voyeur 1 Kor Cinema Palita Japanese uncensored Erotic sola aoi poolsex Ayumu",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/4/48/489/4892784/5_360.jpg",
+        "duration":  "4:59",
+        "views":  9238,
+        "rate":  "1.43",
+        "cat":  "erotic"
+    },
+    {
+        "id":  "TUaTPBLn4yN",
+        "title":  "classic erotic take it in the ass",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/3/34/344/3445213/5_360.jpg",
+        "duration":  "3:08",
+        "views":  6053,
+        "rate":  "4.38",
+        "cat":  "erotic"
+    },
+    {
+        "id":  "mRktCGCkpeI",
+        "title":  "Steamy Cuts | Reel Five",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/8/84/844/8448472/1_360.jpg",
+        "duration":  "83:27",
+        "views":  3489,
+        "rate":  "3.33",
+        "cat":  "erotic"
+    },
+    {
+        "id":  "jldIzrC8Bvm",
+        "title":  "The Movie it was Boring i said him to Fuck me he said later i Start to Play",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/4/49/497/4970720/5_360.jpg",
+        "duration":  "5:03",
+        "views":  1274,
+        "rate":  "0.00",
+        "cat":  "erotic"
+    },
+    {
+        "id":  "kQtjCRhi8kU",
+        "title":  "YANG LAGI VIRAL 2 FEBRUARI 2026 Di",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/159/15957553/14_360.jpg",
+        "duration":  "20:30",
+        "views":  844022,
+        "rate":  "4.32",
+        "cat":  "teen"
+    },
+    {
+        "id":  "B3awbwhRlbK",
+        "title":  "lagi selingkuh laki nya nelpon Full",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/166/16699479/15_360.jpg",
+        "duration":  "4:01",
+        "views":  1993220,
+        "rate":  "4.50",
+        "cat":  "teen"
+    },
+    {
+        "id":  "Ep2GKSWcBqj",
+        "title":  "anak dan ibu indonesia real bokong montok Full Di",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/14/140/14016783/7_360.jpg",
+        "duration":  "1:32",
+        "views":  3415060,
+        "rate":  "4.48",
+        "cat":  "teen"
+    },
+    {
+        "id":  "P1kDgsLCbPw",
+        "title":  "Indian College Teen Couple Hardcore Fucking In Oyo",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17772773/15_360.jpg",
+        "duration":  "19:12",
+        "views":  126321,
+        "rate":  "4.60",
+        "cat":  "teen"
+    },
+    {
+        "id":  "o1rKaI15yZv",
+        "title":  "Yang Lagi Viral 27 november 2025 Full Di",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/152/15215112/8_360.jpg",
+        "duration":  "1:21",
+        "views":  2110506,
+        "rate":  "4.46",
+        "cat":  "teen"
+    },
+    {
+        "id":  "Sq5VnPZXXDB",
+        "title":  "Pinay Teen POV",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/14/143/14362974/1_360.jpg",
+        "duration":  "4:36",
+        "views":  2010618,
+        "rate":  "4.28",
+        "cat":  "teen"
+    },
+    {
+        "id":  "CUEMSTkeewH",
+        "title":  "ibu ke pasar dek sekar di entot ayah Full Di",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/158/15822500/13_360.jpg",
+        "duration":  "2:20",
+        "views":  1707998,
+        "rate":  "4.45",
+        "cat":  "teen"
+    },
+    {
+        "id":  "SROHGkIeqr1",
+        "title":  "GALING MAG IBABAW NI EX GF Pinay scandal teen sexvideo",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/150/15074222/9_360.jpg",
+        "duration":  "4:50",
+        "views":  1453658,
+        "rate":  "4.26",
+        "cat":  "teen"
+    },
+    {
+        "id":  "dCPmT30X1UQ",
+        "title":  "Kaka Perempuan Adik Laki  Ngentot Demi Dapat Saweran Full",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/164/16474258/4_360.jpg",
+        "duration":  "7:53",
+        "views":  1110369,
+        "rate":  "4.32",
+        "cat":  "teen"
+    },
+    {
+        "id":  "A4PB79niMak",
+        "title":  "yes stepmom, it stays between us",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17799129/6_360.jpg",
+        "duration":  "34:06",
+        "views":  72086,
+        "rate":  "4.47",
+        "cat":  "teen"
+    },
+    {
+        "id":  "0Hi0Bz3quok",
+        "title":  "temen bisa di entot",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/156/15696681/15_360.jpg",
+        "duration":  "16:59",
+        "views":  1802327,
+        "rate":  "4.37",
+        "cat":  "teen"
+    },
+    {
+        "id":  "Afyek6deR87",
+        "title":  "YANG LAGI VIRAL 3 NOVEMBER 2025 Full",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/14/149/14986629/4_360.jpg",
+        "duration":  "1:45",
+        "views":  2109277,
+        "rate":  "4.38",
+        "cat":  "teen"
+    },
+    {
+        "id":  "DJ999oYH9ei",
+        "title":  "Blonde Norwegian Girl Spread Her Legs Wide On The Stadium Seat And Got Her Pussy Pounded Raw In Public ( AI )",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17681385/9_360.jpg",
+        "duration":  "10:49",
+        "views":  919855,
+        "rate":  "3.53",
+        "cat":  "bigtits"
+    },
+    {
+        "id":  "pZjDamJUBXe",
+        "title":  "PAWG LOVES BBC",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17803681/9_360.jpg",
+        "duration":  "22:50",
+        "views":  328817,
+        "rate":  "4.34",
+        "cat":  "bigtits"
+    },
+    {
+        "id":  "z1e0qiO0pe3",
+        "title":  "itness Model Gabbi Fit Squirts All Over Teddy+ Tarantino ft. Muscle Barbie, Gabbie Carter, Sienna Grace",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17737923/14_360.jpg",
+        "duration":  "28:17",
+        "views":  853023,
+        "rate":  "4.27",
+        "cat":  "bigtits"
+    },
+    {
+        "id":  "cRMtC3RBgYe",
+        "title":  "Cracked The Maid",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17457494/2_360.jpg",
+        "duration":  "76:03",
+        "views":  1067086,
+        "rate":  "4.55",
+        "cat":  "bigtits"
+    },
+    {
+        "id":  "ZGrL9NcbhIQ",
+        "title":  "Izzy Green Squirt",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17682624/13_360.jpg",
+        "duration":  "15:30",
+        "views":  833883,
+        "rate":  "4.59",
+        "cat":  "bigtits"
+    },
+    {
+        "id":  "OQ7cjic7H5b",
+        "title":  "Sara Blonde And Danner, Danner Mendez - Pick Up A Stranger In My Truck And Fuck Him Hard And Real",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17435191/12_360.jpg",
+        "duration":  "24:04",
+        "views":  700039,
+        "rate":  "4.20",
+        "cat":  "bigtits"
+    },
+    {
+        "id":  "uUeXwzjnW92",
+        "title":  "Real Skandal Percakapan Selingkuh Dengan Adik Ipar Ngentot Sampai Crt",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17651723/9_360.jpg",
+        "duration":  "8:25",
+        "views":  764990,
+        "rate":  "4.41",
+        "cat":  "bigtits"
+    },
+    {
+        "id":  "bvG8VpYto0b",
+        "title":  "Submissive Indian GF Blowjob \u0026 Hard Fucking Moaning  ",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17832942/12_360.jpg",
+        "duration":  "2:46",
+        "views":  182487,
+        "rate":  "4.46",
+        "cat":  "anal"
+    },
+    {
+        "id":  "81tTTAsemr5",
+        "title":  "Bokep Indo Colmekin Pacar Sampe Pecah Perawan",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17737295/13_360.jpg",
+        "duration":  "4:08",
+        "views":  510495,
+        "rate":  "4.19",
+        "cat":  "anal"
+    },
+    {
+        "id":  "ZvTmDprrCjf",
+        "title":  "Teen Moans Like A Whore When The Penis Enters Her Ass",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17808432/1_360.jpg",
+        "duration":  "43:04",
+        "views":  179263,
+        "rate":  "4.44",
+        "cat":  "anal"
+    },
+    {
+        "id":  "gAegwh46EoI",
+        "title":  "Boat Date",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17772713/2_360.jpg",
+        "duration":  "40:23",
+        "views":  256242,
+        "rate":  "4.48",
+        "cat":  "anal"
+    },
+    {
+        "id":  "opJ7LNnBkKk",
+        "title":  "Oh God Shes Perfect",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17734345/3_360.jpg",
+        "duration":  "31:54",
+        "views":  330839,
+        "rate":  "4.41",
+        "cat":  "anal"
+    },
+    {
+        "id":  "QuqeuTkdJPg",
+        "title":  "Bangladeshi Muslim Family Sex Lesbian Sister And Cousin Brother ",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17715493/12_360.jpg",
+        "duration":  "10:19",
+        "views":  527371,
+        "rate":  "4.47",
+        "cat":  "threesome"
+    },
+    {
+        "id":  "kENlTAFQ2ZY",
+        "title":  "@g@th@ Veg@ \u0026 T!n@ Yo$h! Threesome POV",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17779983/15_360.jpg",
+        "duration":  "44:18",
+        "views":  346125,
+        "rate":  "4.35",
+        "cat":  "threesome"
+    },
+    {
+        "id":  "2YmivcrivyZ",
+        "title":  "Wait Till You See Her Friend\u0027s Ass",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17735934/15_360.jpg",
+        "duration":  "46:06",
+        "views":  592849,
+        "rate":  "4.22",
+        "cat":  "threesome"
+    },
+    {
+        "id":  "xjBtCaSPbrF",
+        "title":  "Rahulkajuuu0909 Stripchat",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17753472/13_360.jpg",
+        "duration":  "12:36",
+        "views":  216403,
+        "rate":  "4.59",
+        "cat":  "threesome"
+    },
+    {
+        "id":  "Em0zcAGs0xq",
+        "title":  "SNOS-022 RM Niko Kawagoe",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17765611/10_360.jpg",
+        "duration":  "119:20",
+        "views":  276303,
+        "rate":  "4.41",
+        "cat":  "threesome"
+    },
+    {
+        "id":  "mFuEZfFqkMy",
+        "title":  "Threesome ,, Alanna Pow , Raissa Nur",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17796926/14_360.jpg",
+        "duration":  "39:46",
+        "views":  123134,
+        "rate":  "4.38",
+        "cat":  "threesome"
+    },
+    {
+        "id":  "FqAJz1gQWDf",
+        "title":  "CA WD997 - Tanimura Nagisaki, Yukimura Itsuki (English Sub) (Reduce Mosaic)",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/172/17283355/3_360.jpg",
+        "duration":  "24:12",
+        "views":  812097,
+        "rate":  "4.26",
+        "cat":  "threesome"
+    },
+    {
+        "id":  "3yAVCBDz9tR",
+        "title":  "Giselle Montes Fuck OF",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17868406/7_360.jpg",
+        "duration":  "14:53",
+        "views":  58904,
+        "rate":  "4.55",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "esHLZjyVTPP",
+        "title":  "dying to release the sexual urges",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17593651/12_360.jpg",
+        "duration":  "66:53",
+        "views":  338015,
+        "rate":  "4.38",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "wWJjkR7EvIJ",
+        "title":  "Curvy Nerdy PAWG Slut Gets Her Clothes Ripped Off And Gets Fucked",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17602819/15_360.jpg",
+        "duration":  "18:19",
+        "views":  264885,
+        "rate":  "4.56",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "iXD4eqDaJLy",
+        "title":  "My horny stepbro got what he deserved for ignoring my dripping wet pussy over a stupid ranked game in overwatch full video at porntotal",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/168/16839244/15_360.jpg",
+        "duration":  "3:28",
+        "views":  682611,
+        "rate":  "4.97",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "pXVdEK0utXy",
+        "title":  "Dark PAWG GOTH Angel Twerks On BWC",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/177/17763510/13_360.jpg",
+        "duration":  "4:17",
+        "views":  52348,
+        "rate":  "4.10",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "tRbd2P8e5jf",
+        "title":  "Black On White",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17623331/2_360.jpg",
+        "duration":  "13:33",
+        "views":  179103,
+        "rate":  "3.90",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "Zw5krVIhzhb",
+        "title":  "just fuck me a little",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17684130/13_360.jpg",
+        "duration":  "28:13",
+        "views":  166175,
+        "rate":  "4.24",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "tywRHCvocfB",
+        "title":  "Step sister likes to fuck dressed as an elf for Halloween and is destroyed by her step bro full video at porntotal",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/158/15843073/6_360.jpg",
+        "duration":  "3:30",
+        "views":  603416,
+        "rate":  "4.97",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "PxSB3m4jPA7",
+        "title":  "Chica cosplay  M  se masturba con su juguete favorito full video at porntotal",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/15/158/15831728/11_360.jpg",
+        "duration":  "3:28",
+        "views":  584331,
+        "rate":  "5.00",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "jgCcwks7ZnZ",
+        "title":  "Nice 215",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/175/17593695/15_360.jpg",
+        "duration":  "3:27",
+        "views":  90806,
+        "rate":  "4.80",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "Fsp8RhRKMg6",
+        "title":  "Ukhti ABG Cosplay Ngentot Full",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/174/17444403/14_360.jpg",
+        "duration":  "3:51",
+        "views":  71928,
+        "rate":  "4.46",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "MdjDCEpkzU8",
+        "title":  "Frieren Cos",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17822704/13_360.jpg",
+        "duration":  "24:17",
+        "views":  25610,
+        "rate":  "4.47",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "88niQdopsAm",
+        "title":  "Flower Fantasy VII",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17880349/5_360.jpg",
+        "duration":  "56:38",
+        "views":  16376,
+        "rate":  "4.66",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "YeG4Kxnwfbv",
+        "title":  "Cosplayer Has Some Creamy Big Tits",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17684500/5_360.jpg",
+        "duration":  "17:25",
+        "views":  42265,
+        "rate":  "4.05",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "SiEIi205S9L",
+        "title":  "Baru Dimasukin Uda Keenakan",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17886572/2_360.jpg",
+        "duration":  "3:27",
+        "views":  17179,
+        "rate":  "3.82",
+        "cat":  "cosplay"
+    },
+    {
+        "id":  "UAbOFFievfH",
+        "title":  "Hubby\u0027s Risky Rendezvous Ellie Nova",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/173/17368970/12_360.jpg",
+        "duration":  "40:56",
+        "views":  578246,
+        "rate":  "4.45",
+        "cat":  "massage"
+    },
+    {
+        "id":  "AaGy9zbygtV",
+        "title":  "SNOS 212 ENGLISH SUBTITLE Aphrodisiac Oil Massage Fuck By  AKO Kimura L CUP Big Boobs Busty",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17853290/3_360.jpg",
+        "duration":  "177:33",
+        "views":  95207,
+        "rate":  "4.17",
+        "cat":  "massage"
+    },
+    {
+        "id":  "IHmu5roLfNB",
+        "title":  "Ceweknya Keenakan Di Entot Gaya Ngangkang Lalu Crot Di Depan Memeknya",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17650289/14_360.jpg",
+        "duration":  "12:04",
+        "views":  335568,
+        "rate":  "4.40",
+        "cat":  "massage"
+    },
+    {
+        "id":  "K9uKhhNIIqH",
+        "title":  "Bharti jha romance",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/14/149/14950371/14_360.jpg",
+        "duration":  "9:48",
+        "views":  2322805,
+        "rate":  "4.43",
+        "cat":  "massage"
+    },
+    {
+        "id":  "ydeE6XayMh1",
+        "title":  "Suami Menonton Memek Istrinya Diobok-obok Bapak Tukang Pijat",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/171/17142145/14_360.jpg",
+        "duration":  "33:39",
+        "views":  883276,
+        "rate":  "4.21",
+        "cat":  "massage"
+    },
+    {
+        "id":  "9ED0Cr2LHWv",
+        "title":  "Karina hyper Live Ngentot Dengan Om Om Duda",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/176/17671536/7_360.jpg",
+        "duration":  "15:33",
+        "views":  187058,
+        "rate":  "4.43",
+        "cat":  "massage"
+    },
+    {
+        "id":  "vqGaeoDLxAq",
+        "title":  "Kompilasi video bokep twitter viral part 4",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/9/95/954/9542131/2_360.jpg",
+        "duration":  "5:10",
+        "views":  1485237,
+        "rate":  "4.47",
+        "cat":  "massage"
+    },
+    {
+        "id":  "ukxnRehzbpg",
+        "title":  "(Uncensored) Big-breasted Married Woman\u0027s Extramarital Affair...Hatsune Minori",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/17/178/17803678/9_360.jpg",
+        "duration":  "116:16",
+        "views":  62018,
+        "rate":  "4.34",
+        "cat":  "massage"
+    },
+    {
+        "id":  "LgCvkAeT2bY",
+        "title":  "Hotel Mein Nepali Ladki Ki Condom Lagakar Zabardast Chudai Tg",
+        "thumb":  "https://static-ca-cdn.eporner.com/thumbs/static4/1/16/168/16897423/14_360.jpg",
+        "duration":  "5:09",
+        "views":  756636,
+        "rate":  "4.45",
+        "cat":  "massage"
+    }
 ];
+
 
 /**
  * Fetch live video items and stream links for an active CloudStream plugin.
- * Handles all 35+ providers with verified working video streams and real CDN photo thumbnails.
+ * Handles all 35+ providers from Cs-GizliKeyif, CS3XXX, Hexated, Stormunblessed, and Megarepo
+ * with 216+ unique non-repeating video streams and real CDN photo thumbnails.
  * @param {Object} plugin - CloudStream plugin record
  * @returns {Promise<Array>} List of video items with real poster images & streams
  */
@@ -1892,61 +3777,111 @@ export async function fetchLiveCloudStreamPluginItems(plugin) {
   const pluginNameLower = (plugin.internalName || plugin.name || '').toLowerCase();
   
   const isAdultPlugin = plugin.isNsfw 
+    || (plugin.tvTypes && (plugin.tvTypes.includes('NSFW') || plugin.tvTypes.includes('Adult')))
+    || (plugin.repository && plugin.repository.toLowerCase().includes('gizlikeyif'))
+    || (plugin.repository && plugin.repository.toLowerCase().includes('cs3xxx'))
+    || (plugin.tags && plugin.tags.includes('NSFW'))
     || pluginNameLower.includes('jav') 
     || pluginNameLower.includes('porn') 
     || pluginNameLower.includes('xvideo') 
-    || pluginNameLower.includes('xnxx')
+    || pluginNameLower.includes('xnxx') 
     || pluginNameLower.includes('nsfw') 
     || pluginNameLower.includes('adult') 
     || pluginNameLower.includes('hentai') 
-    || pluginNameLower.includes('vlxx')
-    || pluginNameLower.includes('3x')
-    || pluginNameLower.includes('deepfake')
-    || pluginNameLower.includes('stripchat')
-    || pluginNameLower.includes('coomer')
-    || pluginNameLower.includes('tushy')
-    || pluginNameLower.includes('freeuse')
-    || pluginNameLower.includes('freeporn')
-    || pluginNameLower.includes('18eu');
+    || pluginNameLower.includes('vlxx') 
+    || pluginNameLower.includes('3x') 
+    || pluginNameLower.includes('deepfake') 
+    || pluginNameLower.includes('stripchat') 
+    || pluginNameLower.includes('coomer') 
+    || pluginNameLower.includes('tushy') 
+    || pluginNameLower.includes('freeuse') 
+    || pluginNameLower.includes('freeporn') 
+    || pluginNameLower.includes('spankbang') 
+    || pluginNameLower.includes('missav') 
+    || pluginNameLower.includes('18eu') 
+    || pluginNameLower.includes('aki');
 
   // =========================================================================
-  // 1. ADULT / NSFW PROVIDERS (FreePornVideos, FreeUsePorn, JavHD, 18EU, 3XChina, etc.)
+  // 1. ADULT / NSFW PROVIDERS (Each plugin gets dedicated unique video sets)
   // =========================================================================
   if (isAdultPlugin) {
-    const isJav = pluginNameLower.includes('jav') || pluginNameLower.includes('missav') || pluginNameLower.includes('opjav') || pluginNameLower.includes('japanese');
-    const isChinese = pluginNameLower.includes('3x') || pluginNameLower.includes('china') || pluginNameLower.includes('vlxx') || pluginNameLower.includes('swag') || pluginNameLower.includes('md');
-    const isEuro = pluginNameLower.includes('18eu') || pluginNameLower.includes('tushy') || pluginNameLower.includes('euro');
-    const isHentai = pluginNameLower.includes('hentai') || pluginNameLower.includes('aki') || pluginNameLower.includes('3d') || pluginNameLower.includes('asmr');
-    const isCreampieOrAmateur = pluginNameLower.includes('freeuse') || pluginNameLower.includes('creampie') || pluginNameLower.includes('amateur') || pluginNameLower.includes('coomer') || pluginNameLower.includes('deepfake');
-
     let pool = [];
-    if (isJav) {
-      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.category === 'japanese' || v.category === 'jav');
-    } else if (isChinese) {
-      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.category === 'chinese');
-    } else if (isHentai) {
-      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.category === 'hentai');
-    } else if (isEuro) {
-      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.category === 'milf' || v.category === '4k');
-    } else if (isCreampieOrAmateur) {
-      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.category === 'creampie' || v.category === 'amateur');
+    if (pluginNameLower.includes('missav') || pluginNameLower.includes('javfree')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'jav');
+    } else if (pluginNameLower.includes('javguru') || pluginNameLower.includes('opjav')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'japanese');
+    } else if (pluginNameLower.includes('javhd')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'hd' || v.cat === 'jav');
+    } else if (pluginNameLower.includes('javsub')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'stepsister' || v.cat === 'jav');
+    } else if (pluginNameLower.includes('javtube')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'bigtits' || v.cat === 'japanese');
+    } else if (pluginNameLower.includes('3x') || pluginNameLower.includes('china')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'chinese' || v.cat === 'asian');
+    } else if (pluginNameLower.includes('vlxx') || pluginNameLower.includes('asian')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'asian');
+    } else if (pluginNameLower.includes('18eu')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'erotic' || v.cat === 'milf');
+    } else if (pluginNameLower.includes('tushy')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'anal' || v.cat === 'erotic');
+    } else if (pluginNameLower.includes('deepfake')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'cosplay');
+    } else if (pluginNameLower.includes('coomer')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'teen');
+    } else if (pluginNameLower.includes('stripchat')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'threesome' || v.cat === 'massage');
+    } else if (pluginNameLower.includes('tvchannels') || pluginNameLower.includes('adulttv')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'milf');
+    } else if (pluginNameLower.includes('aki') || pluginNameLower.includes('3d')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === '3d');
+    } else if (pluginNameLower.includes('hentaimama')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'cosplay' || v.cat === 'hentai');
+    } else if (pluginNameLower.includes('hentai')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'hentai');
+    } else if (pluginNameLower.includes('freeuse')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'stepmom' || v.cat === 'stepsister');
+    } else if (pluginNameLower.includes('freeporn') || pluginNameLower.includes('4k')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === '4k');
+    } else if (pluginNameLower.includes('pornhub')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'amateur');
+    } else if (pluginNameLower.includes('xvideos')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'creampie');
+    } else if (pluginNameLower.includes('xnxx')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'hd');
+    } else if (pluginNameLower.includes('spankbang')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === '4k');
+    } else if (pluginNameLower.includes('fullhdporn')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'hd');
+    } else if (pluginNameLower.includes('hqporner')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'bigtits' || v.cat === 'amateur');
+    } else if (pluginNameLower.includes('epikporn')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'massage');
+    } else if (pluginNameLower.includes('porn300')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'teen');
+    } else if (pluginNameLower.includes('pornhat')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'creampie');
+    } else if (pluginNameLower.includes('pornky')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'threesome');
+    } else if (pluginNameLower.includes('porntrex')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'stepmom' || v.cat === 'milf');
+    } else if (pluginNameLower.includes('realpornclip')) {
+      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.cat === 'cosplay');
     } else {
-      // General 4K & HD Tube (FreePornVideos, Pornhub, Xvideos, SpankBang, HQporner, etc.)
-      pool = VERIFIED_ADULT_STREAMS_CATALOG.filter(v => v.category === '4k' || v.category === 'amateur' || v.category === 'milf');
+      const offset = Math.abs(pluginInternal.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % VERIFIED_ADULT_STREAMS_CATALOG.length;
+      pool = [...VERIFIED_ADULT_STREAMS_CATALOG.slice(offset), ...VERIFIED_ADULT_STREAMS_CATALOG.slice(0, offset)];
     }
 
     if (!pool || pool.length === 0) {
       pool = VERIFIED_ADULT_STREAMS_CATALOG;
     }
 
-    // Deterministic offset based on plugin name so different plugins display distinctive items
-    const offset = Math.abs(pluginInternal.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % pool.length;
-    const rotated = [...pool.slice(offset), ...pool.slice(0, offset)].slice(0, 10);
+    const maxItems = Math.min(pool.length, 12);
+    const selectedVideos = pool.slice(0, maxItems);
 
-    rotated.forEach((v) => {
+    selectedVideos.forEach((v) => {
       const vidId = `cs_${pluginInternal}_${v.id}`;
       const embedUrl = `https://www.eporner.com/embed/${v.id}/`;
-      const poster = v.thumb; // Real CDN JPG thumbnail!
+      const poster = v.thumb;
       const rating = parseFloat(v.rate) ? parseFloat(v.rate) * 2 : 8.8;
 
       const meta = {
