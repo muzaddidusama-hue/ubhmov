@@ -337,6 +337,50 @@ body {
   color: var(--text-high);
 }
 
+/* Enter Button Option Badges */
+.search-enter-btn,
+.hub-enter-key-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-med);
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.search-enter-btn:hover,
+.hub-enter-key-btn:hover {
+  background: rgba(0, 242, 254, 0.15);
+  border-color: rgba(0, 242, 254, 0.4);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
+  transform: translateY(-1px);
+}
+
+.search-enter-btn:active,
+.hub-enter-key-btn:active {
+  transform: translateY(1px);
+}
+
+.kbd-key,
+.kbd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+
 .header-actions {
   display: flex;
   align-items: center;

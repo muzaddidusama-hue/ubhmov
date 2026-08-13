@@ -972,6 +972,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Search input handler
   const searchInput = document.getElementById('global-search-input');
   const clearBtn = document.getElementById('search-clear-btn');
+  const enterBtn = document.getElementById('search-enter-btn');
+
+  const executeSearchImmediate = () => {
+    clearTimeout(state.searchTimeout);
+    const query = searchInput ? searchInput.value.trim() : '';
+    state.searchQuery = query;
+    if (state.activeView !== 'explore') {
+      window.location.hash = '#explore';
+    } else {
+      loadExploreCatalog(true);
+    }
+  };
   
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -979,9 +991,9 @@ document.addEventListener('DOMContentLoaded', () => {
       state.searchQuery = query;
 
       if (query.length > 0) {
-        clearBtn.classList.remove('hidden');
+        clearBtn?.classList.remove('hidden');
       } else {
-        clearBtn.classList.add('hidden');
+        clearBtn?.classList.add('hidden');
       }
 
       // Debounce searching requests
@@ -994,6 +1006,20 @@ document.addEventListener('DOMContentLoaded', () => {
           loadExploreCatalog(true);
         }
       }, 500);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        executeSearchImmediate();
+      }
+    });
+  }
+
+  if (enterBtn) {
+    enterBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      executeSearchImmediate();
     });
   }
 

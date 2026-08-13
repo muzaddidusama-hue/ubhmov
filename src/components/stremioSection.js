@@ -89,8 +89,15 @@ export function createStremioServersSection(callbacks = {}) {
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
           </svg>
           <input type="text" id="hub-quick-manifest-input" placeholder="Paste Stremio manifest URL (e.g. https://torrentio.strem.fun/manifest.json or stremio://...)" autocomplete="off">
+          <button id="hub-quick-enter-key-btn" class="hub-enter-key-btn" type="button" title="Click or Press Enter on keyboard to Install">
+            <span class="kbd-badge">↵ Enter</span>
+          </button>
         </div>
         <button id="hub-quick-manifest-btn" class="primary-btn accent-glow-btn">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="9 10 4 15 9 20"></polyline>
+            <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+          </svg>
           Install Manifest
         </button>
       </div>
@@ -141,6 +148,7 @@ export function createStremioServersSection(callbacks = {}) {
     // Quick Install listener
     const quickInput = sectionWrapper.querySelector('#hub-quick-manifest-input');
     const quickBtn = sectionWrapper.querySelector('#hub-quick-manifest-btn');
+    const quickEnterBtn = sectionWrapper.querySelector('#hub-quick-enter-key-btn');
     
     const handleQuickInstall = async () => {
       const val = quickInput?.value?.trim();
@@ -148,8 +156,13 @@ export function createStremioServersSection(callbacks = {}) {
         showToast('Please enter a valid Stremio manifest URL', 'error');
         return;
       }
-      quickBtn.disabled = true;
-      quickBtn.textContent = 'Installing...';
+      if (quickBtn) {
+        quickBtn.disabled = true;
+        quickBtn.textContent = 'Installing...';
+      }
+      if (quickEnterBtn) {
+        quickEnterBtn.disabled = true;
+      }
       try {
         const installed = await installStremioAddon(val);
         showToast(`Successfully installed Stremio add-on: "${installed.name}"`, 'success');
@@ -161,14 +174,27 @@ export function createStremioServersSection(callbacks = {}) {
       } finally {
         if (quickBtn) {
           quickBtn.disabled = false;
-          quickBtn.textContent = 'Install Manifest';
+          quickBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none">
+              <polyline points="9 10 4 15 9 20"></polyline>
+              <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+            </svg>
+            Install Manifest
+          `;
+        }
+        if (quickEnterBtn) {
+          quickEnterBtn.disabled = false;
         }
       }
     };
 
     quickBtn?.addEventListener('click', handleQuickInstall);
+    quickEnterBtn?.addEventListener('click', handleQuickInstall);
     quickInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleQuickInstall();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleQuickInstall();
+      }
     });
 
     // Tab switcher listeners
