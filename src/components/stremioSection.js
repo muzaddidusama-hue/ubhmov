@@ -1,7 +1,8 @@
 import {
   getActiveAddonCatalogFeeds,
   fetchStremioFeedItems,
-  getStremioAddons
+  getStremioAddons,
+  generateStremioTitlePoster
 } from '../utils/apiManager.js';
 import { escapeHTML, sanitizeUrl } from '../utils/security.js';
 
@@ -240,22 +241,31 @@ export function createStremioServersSection(callbacks = {}) {
       card.className = 'movie-card stremio-stream-card';
 
       const title = escapeHTML(item.title || item.name || 'Untitled');
+      const rawTitle = item.title || item.name || 'Untitled';
       const imdbId = item.imdb_id || item.id || '';
-      const fallbackMetahub = imdbId.startsWith('tt') ? `https://images.metahub.space/poster/medium/${imdbId}/img` : 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster';
-      const posterUrl = sanitizeUrl(item.poster || item.posterUrl || fallbackMetahub, fallbackMetahub);
       const rating = escapeHTML(item.vote_average ? item.vote_average.toFixed(1) : '8.0');
       const releaseYear = escapeHTML((item.release_date || '').split('-')[0] || '');
       const type = item.type === 'tv' ? 'tv' : 'movie';
       const typeBadge = type === 'tv' ? 'TV Series' : 'Movie';
 
+      // Build 3-stage poster fallback chain
+      const metahubMedium = imdbId.startsWith('tt') ? `https://images.metahub.space/poster/medium/${imdbId}/img` : null;
+      const metahubSmall = imdbId.startsWith('tt') ? `https://images.metahub.space/poster/small/${imdbId}/img` : null;
+      const cinemetaPoster = imdbId.startsWith('tt') ? `https://v3-cinemeta.strem.io/meta/${type === 'tv' ? 'series' : 'movie'}/${imdbId}.json` : null;
+      const svgFallback = generateStremioTitlePoster ? generateStremioTitlePoster(rawTitle, (feed && feed.icon) ? `${feed.icon} ${feed.addonName}` : '⚡ STREMIO') : `https://placehold.co/342x513/0c0e15/00f2fe?text=${encodeURIComponent(rawTitle.substring(0,20))}`;
+
+      // Start with metahub or item poster
+      const initialPoster = sanitizeUrl(item.poster || item.posterUrl || metahubMedium || svgFallback, svgFallback);
+
       card.innerHTML = `
         <div class="card-poster-wrapper">
-          <img src="${posterUrl}" 
+          <img src="${initialPoster}" 
                class="card-poster" 
                alt="${title}" 
                loading="lazy" 
-               decoding="async" 
-               onerror="if (this.dataset.triedMetahub !== '1' && '${imdbId}') { this.dataset.triedMetahub = '1'; this.src='https://images.metahub.space/poster/medium/${imdbId}/img'; } else { this.onerror=null; this.src='https://images.metahub.space/poster/small/${imdbId || 'tt0000000'}/img'; }">
+               decoding="async"
+               data-imdb="${imdbId}"
+               data-stage="0">
           <span class="card-badge stremio-badge">⚡ Stremio</span>
           <span class="card-badge card-type-badge">${typeBadge}</span>
 
@@ -288,6 +298,21 @@ export function createStremioServersSection(callbacks = {}) {
           </div>
         </div>
       `;
+
+      // JS-based multi-stage poster fallback
+      const imgEl = card.querySelector('.card-poster');
+      if (imgEl) {
+        const posterFallbacks = [metahubMedium, metahubSmall, svgFallback].filter(Boolean);
+        let stageIdx = 0;
+        imgEl.addEventListener('error', function onImgError() {
+          stageIdx++;
+          if (stageIdx < posterFallbacks.length) {
+            imgEl.src = posterFallbacks[stageIdx];
+          } else {
+            imgEl.removeEventListener('error', onImgError);
+          }
+        });
+      }
 
       card.querySelector('.stremio-play-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();

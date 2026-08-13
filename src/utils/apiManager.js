@@ -702,18 +702,30 @@ export async function fetchStremioFeedItems(feed) {
       }
     }
 
+    // Fallback: stream scrapers have no catalog - seed with Cinemeta top IMDB titles 
+    // so posters are visible and user can click to play
+    if (!data || !Array.isArray(data.metas) || data.metas.length === 0) {
+      const cinemetaType = (feed.rawType === 'series' || feed.rawType === 'tv') ? 'series' : 'movie';
+      const cinemetaUrl = `https://v3-cinemeta.strem.io/catalog/${cinemetaType}/top.json`;
+      data = await fetchWithFallback(cinemetaUrl);
+      if (!data || !Array.isArray(data.metas) || data.metas.length === 0) {
+        data = await fetchWithFallback(`https://corsproxy.io/?url=${encodeURIComponent(cinemetaUrl)}`);
+      }
+    }
+
     const metas = data && Array.isArray(data.metas) ? data.metas : [];
 
     return metas.map(meta => {
       const rawType = meta.type || feed.rawType || 'movie';
       const type = (rawType === 'series' || rawType === 'tv') ? 'tv' : 'movie';
       const title = meta.name || meta.title || 'Untitled';
+      const imdbId = meta.id || '';
       
-      // Stremio's native Metahub poster and backdrop CDN resolution
+      // Resolve poster via Stremio's Metahub CDN (has real IMDB cover art)
       let poster = meta.poster;
       if (!poster || typeof poster !== 'string' || !poster.startsWith('http')) {
-        if (meta.id && String(meta.id).startsWith('tt')) {
-          poster = `https://images.metahub.space/poster/medium/${meta.id}/img`;
+        if (imdbId && String(imdbId).startsWith('tt')) {
+          poster = `https://images.metahub.space/poster/medium/${imdbId}/img`;
         } else {
           poster = generateStremioTitlePoster(title, feed.icon ? `${feed.icon} ${feed.addonName}` : '⚡ STREMIO');
         }
@@ -721,16 +733,16 @@ export async function fetchStremioFeedItems(feed) {
 
       let background = meta.background;
       if (!background || typeof background !== 'string' || !background.startsWith('http')) {
-        if (meta.id && String(meta.id).startsWith('tt')) {
-          background = `https://images.metahub.space/background/medium/${meta.id}/img`;
+        if (imdbId && String(imdbId).startsWith('tt')) {
+          background = `https://images.metahub.space/background/medium/${imdbId}/img`;
         } else {
           background = null;
         }
       }
 
       return {
-        id: meta.id,
-        imdb_id: meta.id,
+        id: imdbId,
+        imdb_id: imdbId,
         title: title,
         name: title,
         type: type,
