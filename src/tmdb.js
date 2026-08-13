@@ -38,6 +38,22 @@ export function clearTmdbCache() {
   pendingRequests.clear();
 }
 
+/**
+ * Check if 18+ / NSFW streaming and search is enabled by user
+ */
+export function isNsfwAllowed() {
+  return localStorage.getItem('nsfw_streaming_enabled') === 'true';
+}
+
+/**
+ * Set 18+ / NSFW streaming and search enabled state
+ */
+export function setNsfwAllowed(enabled) {
+  localStorage.setItem('nsfw_streaming_enabled', enabled ? 'true' : 'false');
+  clearTmdbCache();
+  window.dispatchEvent(new CustomEvent('nsfw-setting-changed', { detail: enabled }));
+}
+
 // Fetch helper with in-memory caching, request deduplication, and Bearer / v3 API key support
 async function tmdbFetch(endpoint, params = {}) {
   const apiKey = getApiKey();
@@ -135,14 +151,17 @@ export const tmdb = {
 
   // Search Multi (movies, tv, person)
   searchMulti: async (query, page = 1) => {
-    return tmdbFetch('/search/multi', { query, page, language: 'en-US', include_adult: false });
+    const includeAdult = isNsfwAllowed();
+    return tmdbFetch('/search/multi', { query, page, language: 'en-US', include_adult: includeAdult });
   },
 
   // Discover movies by filter
   discoverMovies: async (page = 1, genreId = '', originalLanguage = '') => {
     const params = { page, language: 'en-US', sort_by: 'popularity.desc' };
-    if (genreId === '18plus') {
+    if (genreId === '18plus' || isNsfwAllowed()) {
       params.include_adult = true;
+    }
+    if (genreId === '18plus') {
       params.with_keywords = '190370|207268|208879|12181|14710|15540';
     } else if (genreId) {
       params.with_genres = genreId;
@@ -156,8 +175,10 @@ export const tmdb = {
   // Discover TV shows by filter
   discoverSeries: async (page = 1, genreId = '', originalLanguage = '') => {
     const params = { page, language: 'en-US', sort_by: 'popularity.desc' };
-    if (genreId === '18plus') {
+    if (genreId === '18plus' || isNsfwAllowed()) {
       params.include_adult = true;
+    }
+    if (genreId === '18plus') {
       params.with_keywords = '190370|207268|208879|12181|14710|15540';
     } else if (genreId) {
       params.with_genres = genreId;

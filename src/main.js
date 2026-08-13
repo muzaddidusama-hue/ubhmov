@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { tmdb, getApiKey, isApiConfigured, clearTmdbCache } from './tmdb.js';
+import { tmdb, getApiKey, isApiConfigured, clearTmdbCache, isNsfwAllowed, setNsfwAllowed } from './tmdb.js';
 import { createHeroSliderComponent } from './components/hero.js';
 import { createCarouselComponent, createSkeletonCarouselComponent, createMovieCard } from './components/carousel.js';
 import { createStremioServersSection } from './components/stremioSection.js';
@@ -770,6 +770,11 @@ function loadSettingsFormValues() {
     tvInput.value = getTvStreamTemplate();
   }
 
+  const nsfwToggle = document.getElementById('settings-nsfw-toggle');
+  if (nsfwToggle) {
+    nsfwToggle.checked = isNsfwAllowed();
+  }
+
   // Update diagnostics logs view
   const logsBox = document.getElementById('diagnostic-logs-box');
   const activeModeSpan = document.getElementById('diagnostic-active-mode');
@@ -825,6 +830,11 @@ function saveSettingsFromUI() {
     localStorage.setItem('stream_tv_template', tvInput.value.trim());
   }
 
+  const nsfwToggle = document.getElementById('settings-nsfw-toggle');
+  if (nsfwToggle) {
+    setNsfwAllowed(nsfwToggle.checked);
+  }
+
   showToast('Configuration applied and saved locally!', 'success');
   clearTmdbCache();
   verifyApiConfiguration();
@@ -835,6 +845,7 @@ function resetSettingsToDefault() {
     localStorage.removeItem('tmdb_api_key');
     localStorage.removeItem('stream_movie_template');
     localStorage.removeItem('stream_tv_template');
+    localStorage.removeItem('nsfw_streaming_enabled');
     
     clearTmdbCache();
     loadSettingsFormValues();
@@ -1243,6 +1254,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const logsBox = document.getElementById('diagnostic-logs-box');
     if (logsBox) logsBox.textContent = "Logs cleared. Perform authentication events to log data.";
     showToast('Diagnostic logs cleared.', 'info');
+  });
+
+  // Settings NSFW Streaming Live Toggle
+  document.getElementById('settings-nsfw-toggle')?.addEventListener('change', (e) => {
+    setNsfwAllowed(e.target.checked);
+    showToast(e.target.checked ? '18+ / NSFW streaming & search enabled!' : '18+ / NSFW content filtered.', e.target.checked ? 'success' : 'info');
+    if (state.activeView === 'explore') {
+      loadExploreCatalog(true);
+    }
   });
 
   // Settings Password Toggle
