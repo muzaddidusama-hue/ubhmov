@@ -3137,6 +3137,192 @@ body {
   box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
 }
 
+/* ==========================================================================
+   See All Buttons & Section Video Gallery Modal
+   ========================================================================== */
+.see-all-btn,
+.stremio-see-all-btn {
+  background: rgba(0, 242, 254, 0.08);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  color: var(--accent-cyan);
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.see-all-btn:hover,
+.stremio-see-all-btn:hover {
+  background: var(--accent-gradient);
+  color: #000;
+  border-color: transparent;
+  transform: translateX(3px);
+  box-shadow: var(--cyan-glow);
+}
+
+.row-title:hover {
+  color: var(--accent-cyan);
+  transition: color var(--transition-fast);
+}
+
+/* View All Modal Dialog */
+.view-all-modal-dialog {
+  background: rgba(13, 15, 24, 0.96);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--border-glass);
+  border-radius: 22px;
+  width: 95%;
+  max-width: 1400px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), var(--cyan-glow);
+  overflow: hidden;
+  animation: modal-pop-kf 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.view-all-modal-header {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--border-glass);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.view-all-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.view-all-icon {
+  font-size: 1.8rem;
+}
+
+.view-all-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-high);
+  margin: 0;
+}
+
+.view-all-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-med);
+}
+
+.view-all-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.view-all-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.view-all-search-wrap svg {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.view-all-search-wrap input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: #fff;
+  padding: 0.5rem 1rem 0.5rem 2.2rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  width: 220px;
+  transition: all var(--transition-fast);
+}
+
+.view-all-search-wrap input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  background: rgba(255, 255, 255, 0.08);
+  width: 260px;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+}
+
+.view-all-sort-dropdown {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-high);
+  padding: 0.5rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.view-all-sort-dropdown option {
+  background: #0f111a;
+  color: #fff;
+}
+
+.view-all-modal-body {
+  padding: 1.5rem 1.75rem 2rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.view-all-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .view-all-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.85rem;
+  }
+  .view-all-search-wrap input {
+    width: 100%;
+  }
+  .view-all-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.view-all-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--text-med);
+  font-size: 0.9rem;
+  padding: 1.5rem;
+}
+
+.view-all-load-more-wrap {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+}
+
+
 
 
 

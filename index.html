@@ -918,6 +918,47 @@ config.js is ignored.</code>
       </div>
     </div>
 
+    <!-- View All Videos in Section Gallery Modal -->
+    <div id="view-all-modal" class="modal-backdrop hidden">
+      <div class="view-all-modal-dialog">
+        <div class="view-all-modal-header">
+          <div class="view-all-title-wrap">
+            <span id="view-all-icon" class="view-all-icon">🎬</span>
+            <div>
+              <h2 id="view-all-title" class="view-all-title">Section Gallery</h2>
+              <span id="view-all-subtitle" class="view-all-subtitle">Showing all available titles</span>
+            </div>
+          </div>
+          <div class="view-all-header-actions">
+            <div class="view-all-search-wrap">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="view-all-search-input" placeholder="Filter this section...">
+            </div>
+            <select id="view-all-sort-select" class="view-all-sort-dropdown">
+              <option value="default">Default Order</option>
+              <option value="rating">Top Rated (★)</option>
+              <option value="year">Newest First</option>
+              <option value="title">Title (A-Z)</option>
+            </select>
+            <button id="view-all-close-btn" class="modal-close-btn" title="Close Gallery">&times;</button>
+          </div>
+        </div>
+
+        <div class="view-all-modal-body">
+          <div id="view-all-grid" class="view-all-grid"></div>
+          <div id="view-all-loading-indicator" class="view-all-loading hidden">
+            <span class="loader-spinner"></span>
+            <span>Fetching more videos...</span>
+          </div>
+          <div id="view-all-load-more-wrap" class="view-all-load-more-wrap hidden">
+            <button id="view-all-load-more-btn" class="primary-btn accent-glow-btn" style="padding:0.75rem 2rem;">
+              Load More Videos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification system -->
     <div id="toast-container" class="toast-container"></div>
     

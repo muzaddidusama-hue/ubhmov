@@ -286,28 +286,37 @@ async function loadHomeFeeds() {
       heroContainer.innerHTML = '';
     }
 
-    // Build Rows
+    // Build Rows with See All option
+    // 1. Trending Movies
     trendingContainer.innerHTML = '';
     trendingContainer.appendChild(
-      createCarouselComponent('Trending Movies', trendingList, 'movie', handleInfoClick)
+      createCarouselComponent('Trending Movies', trendingList, 'movie', handleInfoClick, null, () => {
+        openSectionGallery({ title: 'Trending Movies', icon: '🔥', items: trendingList, mediaType: 'movie', categoryKey: 'trending' });
+      })
     );
 
     // 2. Popular TV Series
     popularTVContainer.innerHTML = '';
     popularTVContainer.appendChild(
-      createCarouselComponent('Popular TV Series', popularTV.results || [], 'tv', handleInfoClick)
+      createCarouselComponent('Popular TV Series', popularTV.results || [], 'tv', handleInfoClick, null, () => {
+        openSectionGallery({ title: 'Popular TV Series', icon: '📺', items: popularTV.results || [], mediaType: 'tv', categoryKey: 'popular_series' });
+      })
     );
 
     // 3. Top Rated Movies
     topMoviesContainer.innerHTML = '';
     topMoviesContainer.appendChild(
-      createCarouselComponent('Top Rated Classics', topMovies.results || [], 'movie', handleInfoClick)
+      createCarouselComponent('Top Rated Classics', topMovies.results || [], 'movie', handleInfoClick, null, () => {
+        openSectionGallery({ title: 'Top Rated Classics', icon: '⭐', items: topMovies.results || [], mediaType: 'movie', categoryKey: 'top_rated' });
+      })
     );
 
     // 4. Now Playing
     nowPlayingContainer.innerHTML = '';
     nowPlayingContainer.appendChild(
-      createCarouselComponent('Now in Theatres', nowPlaying.results || [], 'movie', handleInfoClick)
+      createCarouselComponent('Now in Theatres', nowPlaying.results || [], 'movie', handleInfoClick, null, () => {
+        openSectionGallery({ title: 'Now in Theatres', icon: '🍿', items: nowPlaying.results || [], mediaType: 'movie', categoryKey: 'now_playing' });
+      })
     );
 
     // 5. Stremio Add-ons Video Streams & Play Showcase Section
@@ -604,6 +613,9 @@ function renderContinueWatching() {
     },
     (id, type) => {
       removeContinueWatchingProgress(id, type);
+    },
+    () => {
+      openSectionGallery({ title: 'Continue Watching', icon: '⏱️', items: adaptedItems, subtitle: 'Your recently watched media' });
     }
   );
 
@@ -1361,11 +1373,202 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Initialize Section Video Gallery modal listeners
+  initSectionGalleryListeners();
+
   // Initialize Authentication State and Forms Listener after Firebase is fully loaded to avoid race condition mock flags
   firebaseInitPromise.then(() => {
     initializeAuthListener();
   });
 });
+
+// ==========================================================================
+// Section Video Gallery (View All Available Videos in Any Section)
+// ==========================================================================
+let currentGallerySection = null;
+let currentGalleryPage = 1;
+let currentGalleryItems = [];
+
+function openSectionGallery(config) {
+  const modal = document.getElementById('view-all-modal');
+  const titleEl = document.getElementById('view-all-title');
+  const subtitleEl = document.getElementById('view-all-subtitle');
+  const iconEl = document.getElementById('view-all-icon');
+  const grid = document.getElementById('view-all-grid');
+  const searchInput = document.getElementById('view-all-search-input');
+  const sortSelect = document.getElementById('view-all-sort-select');
+  const loadMoreWrap = document.getElementById('view-all-load-more-wrap');
+
+  if (!modal || !grid) return;
+
+  currentGallerySection = config;
+  currentGalleryPage = 1;
+  currentGalleryItems = Array.isArray(config.items) ? [...config.items] : [];
+
+  if (titleEl) titleEl.textContent = config.title || 'Section Gallery';
+  if (subtitleEl) subtitleEl.textContent = config.subtitle || `Showing ${currentGalleryItems.length} available titles`;
+  if (iconEl) iconEl.textContent = config.icon || (config.feed?.icon || '🎬');
+  if (searchInput) searchInput.value = '';
+  if (sortSelect) sortSelect.value = 'default';
+
+  // Check if we can load more pages (for TMDB categories)
+  if (loadMoreWrap) {
+    if (config.categoryKey && ['trending', 'popular_series', 'top_rated', 'now_playing'].includes(config.categoryKey)) {
+      loadMoreWrap.classList.remove('hidden');
+    } else {
+      loadMoreWrap.classList.add('hidden');
+    }
+  }
+
+  renderGalleryGrid();
+  modal.classList.remove('hidden');
+}
+
+function renderGalleryGrid() {
+  const grid = document.getElementById('view-all-grid');
+  const searchInput = document.getElementById('view-all-search-input');
+  const sortSelect = document.getElementById('view-all-sort-select');
+  const subtitleEl = document.getElementById('view-all-subtitle');
+  if (!grid) return;
+
+  let filtered = [...currentGalleryItems];
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  const sortMode = sortSelect ? sortSelect.value : 'default';
+
+  // Apply Search Query filter
+  if (query) {
+    filtered = filtered.filter(item => {
+      const title = (item.title || item.name || '').toLowerCase();
+      const overview = (item.overview || '').toLowerCase();
+      const actress = (item.actress || '').toLowerCase();
+      return title.includes(query) || overview.includes(query) || actress.includes(query);
+    });
+  }
+
+  // Apply Sorting
+  if (sortMode === 'rating') {
+    filtered.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+  } else if (sortMode === 'year') {
+    filtered.sort((a, b) => {
+      const yearA = parseInt((a.release_date || a.first_air_date || '0').split('-')[0]) || 0;
+      const yearB = parseInt((b.release_date || b.first_air_date || '0').split('-')[0]) || 0;
+      return yearB - yearA;
+    });
+  } else if (sortMode === 'title') {
+    filtered.sort((a, b) => (a.title || a.name || '').localeCompare(b.title || b.name || ''));
+  }
+
+  if (subtitleEl && currentGallerySection) {
+    subtitleEl.textContent = query 
+      ? `Found ${filtered.length} matches (out of ${currentGalleryItems.length})` 
+      : (currentGallerySection.subtitle || `Showing ${currentGalleryItems.length} available titles`);
+  }
+
+  grid.innerHTML = '';
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 3rem 1rem; text-align: center; color: var(--text-med);">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔍</div>
+        <h4 style="color: var(--text-high); font-size: 1.1rem; margin-bottom: 0.25rem;">No matching videos found</h4>
+        <p style="font-size: 0.85rem;">Try adjusting your filter search term.</p>
+      </div>
+    `;
+    return;
+  }
+
+  filtered.forEach(item => {
+    const cardType = currentGallerySection?.mediaType || item.media_type || item.type || (item.first_air_date ? 'tv' : 'movie');
+    const card = createMovieCard(item, cardType, handleInfoClick);
+    grid.appendChild(card);
+  });
+}
+
+function initSectionGalleryListeners() {
+  const modal = document.getElementById('view-all-modal');
+  const closeBtn = document.getElementById('view-all-close-btn');
+  const searchInput = document.getElementById('view-all-search-input');
+  const sortSelect = document.getElementById('view-all-sort-select');
+  const loadMoreBtn = document.getElementById('view-all-load-more-btn');
+  const loadingIndicator = document.getElementById('view-all-loading-indicator');
+
+  const closeModal = () => {
+    modal?.classList.add('hidden');
+  };
+
+  closeBtn?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      closeModal();
+    }
+  });
+
+  searchInput?.addEventListener('input', () => {
+    renderGalleryGrid();
+  });
+
+  sortSelect?.addEventListener('change', () => {
+    renderGalleryGrid();
+  });
+
+  // Global event listener to open section gallery
+  window.addEventListener('open-section-gallery', (e) => {
+    if (e.detail) {
+      openSectionGallery(e.detail);
+    }
+  });
+
+  // Load More Button handler for paginated categories
+  loadMoreBtn?.addEventListener('click', async () => {
+    if (!currentGallerySection || !currentGallerySection.categoryKey) return;
+    currentGalleryPage++;
+
+    if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+    if (loadMoreBtn) loadMoreBtn.disabled = true;
+
+    try {
+      let newResults = [];
+      const catKey = currentGallerySection.categoryKey;
+      
+      if (catKey === 'trending') {
+        const res = await tmdb.getTrendingMovies(currentGalleryPage);
+        newResults = res.results || [];
+      } else if (catKey === 'popular_series') {
+        const res = await tmdb.getPopularSeries(currentGalleryPage);
+        newResults = res.results || [];
+      } else if (catKey === 'top_rated') {
+        const res = await tmdb.getTopRatedMovies(currentGalleryPage);
+        newResults = res.results || [];
+      } else if (catKey === 'now_playing') {
+        const res = await tmdb.getNowPlaying(currentGalleryPage);
+        newResults = res.results || [];
+      }
+
+      if (newResults.length > 0) {
+        // De-duplicate
+        const existingIds = new Set(currentGalleryItems.map(i => i.id));
+        newResults.forEach(nr => {
+          if (!existingIds.has(nr.id)) {
+            currentGalleryItems.push(nr);
+          }
+        });
+        renderGalleryGrid();
+        showToast(`Loaded ${newResults.length} more titles.`, 'success');
+      } else {
+        document.getElementById('view-all-load-more-wrap')?.classList.add('hidden');
+        showToast('All available pages loaded.', 'info');
+      }
+    } catch (err) {
+      showToast('Failed to load more videos: ' + err.message, 'error');
+    } finally {
+      if (loadingIndicator) loadingIndicator.classList.add('hidden');
+      if (loadMoreBtn) loadMoreBtn.disabled = false;
+    }
+  });
+}
 
 // ==========================================================================
 // User Authentication & Admin Dashboard Integration

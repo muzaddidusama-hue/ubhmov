@@ -76,19 +76,27 @@ export function createMovieCard(item, mediaType, onClick, onRemove = null) {
 /**
  * Creates a horizontally scrolling category row with arrow controls.
  */
-export function createCarouselComponent(title, items, mediaType, onCardClick, onRemoveClick = null) {
+export function createCarouselComponent(title, items, mediaType, onCardClick, onRemoveClick = null, onViewAll = null) {
   const rowWrapper = document.createElement('div');
   rowWrapper.className = 'carousel-row-container';
   
+  const countBadge = items && items.length > 0 ? ` (${items.length})` : '';
+
   // Outer structure
   rowWrapper.innerHTML = `
     <div class="row-title-container">
-      <h2 class="row-title">${title}</h2>
+      <div class="row-title-left" style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <h2 class="row-title" style="cursor:pointer;" title="View all in this category">${title}</h2>
+        <button class="see-all-btn" title="View all available videos in ${title}">
+          <span>See All${countBadge}</span>
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
       <div class="row-navigation-arrows">
-        <button class="arrow-btn arrow-prev">
+        <button class="arrow-btn arrow-prev" title="Scroll Left">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
-        <button class="arrow-btn arrow-next">
+        <button class="arrow-btn arrow-next" title="Scroll Right">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </button>
       </div>
@@ -123,6 +131,20 @@ export function createCarouselComponent(title, items, mediaType, onCardClick, on
     // Scroll right
     viewport.scrollBy({ left: viewport.offsetWidth * 0.75, behavior: 'smooth' });
   });
+
+  // View all click triggers
+  const handleViewAllTrigger = () => {
+    if (typeof onViewAll === 'function') {
+      onViewAll({ title, items, mediaType });
+    } else {
+      window.dispatchEvent(new CustomEvent('open-section-gallery', {
+        detail: { title, items, mediaType }
+      }));
+    }
+  };
+
+  rowWrapper.querySelector('.see-all-btn')?.addEventListener('click', handleViewAllTrigger);
+  rowWrapper.querySelector('.row-title')?.addEventListener('click', handleViewAllTrigger);
   
   return rowWrapper;
 }

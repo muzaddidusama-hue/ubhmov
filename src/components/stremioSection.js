@@ -193,13 +193,18 @@ export function createStremioServersSection(callbacks = {}) {
     row.dataset.feedId = feedId;
     
     const badgePrefix = feed.isCloudStream ? '☁️' : '⚡';
+    const countText = items && items.length > 0 ? ` (${items.length})` : '';
 
     row.innerHTML = `
       <div class="stremio-feed-header">
-        <div class="stremio-feed-title-wrap">
+        <div class="stremio-feed-title-wrap" style="cursor:pointer;" title="View all videos in this feed">
           <span class="stremio-feed-icon">${feed.icon || '🍿'}</span>
           <h3 class="stremio-feed-title">${escapeHTML(feed.catalogName)}</h3>
           <span class="stremio-feed-badge">${badgePrefix} ${escapeHTML(feed.addonName)}</span>
+          <button class="stremio-see-all-btn" title="View all videos in this feed">
+            <span>See All${countText}</span>
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
         </div>
         <div class="stremio-stream-arrows">
           <button class="arrow-btn stremio-row-prev" data-target="carousel-${feedId}" title="Scroll Left">
@@ -219,9 +224,29 @@ export function createStremioServersSection(callbacks = {}) {
     const carousel = row.querySelector(`#carousel-${feedId}`);
     if (carousel) renderFeedCards(items, carousel, feed);
 
+    // Attach See All gallery opener
+    const handleSeeAllFeed = () => {
+      window.dispatchEvent(new CustomEvent('open-section-gallery', {
+        detail: {
+          title: feed.catalogName,
+          subtitle: `From ${feed.addonName} · ${items.length} titles available`,
+          icon: feed.icon || (feed.isCloudStream ? '☁️' : '⚡'),
+          items: items,
+          feed: feed
+        }
+      }));
+    };
+
+    row.querySelector('.stremio-see-all-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleSeeAllFeed();
+    });
+    row.querySelector('.stremio-feed-title-wrap')?.addEventListener('click', handleSeeAllFeed);
+
     // Attach arrows for this new row
     row.querySelectorAll('.stremio-row-prev, .stremio-row-next').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const c = sectionWrapper.querySelector(`#${btn.getAttribute('data-target')}`);
         const dir = btn.classList.contains('stremio-row-prev') ? -1 : 1;
         if (c) c.scrollBy({ left: dir * c.clientWidth * 0.75, behavior: 'smooth' });
