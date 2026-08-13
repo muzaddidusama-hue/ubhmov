@@ -7,11 +7,16 @@
   <meta name="description" content="Discover and stream your favorite movies and TV shows in stunning premium quality. Sleek, minimal, and responsive.">
   
   <!-- Content Security Policy & Security Directives -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://image.tmdb.org https://placehold.co https://lh3.googleusercontent.com; media-src 'self' blob: data: https:; connect-src 'self' https: https://api.themoviedb.org https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com; frame-src 'self' https:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://image.tmdb.org https://placehold.co https://lh3.googleusercontent.com; media-src 'self' blob: data: https:; worker-src 'self' blob:; connect-src 'self' https: wss: ws: https://api.themoviedb.org https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com; frame-src 'self' https:;">
 
   <!-- Preconnect to TMDB CDN for faster image and API fetches -->
   <link rel="preconnect" href="https://api.themoviedb.org">
   <link rel="preconnect" href="https://image.tmdb.org">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+  <!-- HLS.js & WebTorrent Streaming Engines for In-Browser Video Playback -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

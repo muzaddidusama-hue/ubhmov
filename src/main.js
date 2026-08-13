@@ -885,21 +885,39 @@ async function handleInfoClick(id, type) {
     let itemDetails = null;
     let actualId = typeof id === 'object' ? id.id : id;
 
-    if (typeof id === 'object' && (id.embedUrl || id.isCloudStream)) {
-      itemDetails = id;
+    if (typeof id === 'object' && (id.embedUrl || id.directUrl || id.streamUrl || id.isCloudStream || id.isStremioStream)) {
+      itemDetails = { ...id };
     } else if (typeof actualId === 'string' && actualId.startsWith('cs_')) {
       itemDetails = getCloudStreamVideoMeta(actualId);
     }
 
     if (!itemDetails) {
-      try {
-        itemDetails = await tmdb.getDetails(actualId, type);
-      } catch (tmdbErr) {
-        if (typeof actualId === 'string' && actualId.startsWith('tt')) {
-          itemDetails = await fetchStremioMeta(type, actualId);
+      if (typeof actualId === 'number' || (!isNaN(actualId) && !String(actualId).startsWith('tt'))) {
+        try {
+          itemDetails = await tmdb.getDetails(actualId, type);
+        } catch (tmdbErr) {
+          console.warn('TMDB details error:', tmdbErr);
         }
-        if (!itemDetails) throw tmdbErr;
       }
+      
+      if (!itemDetails && typeof actualId === 'string' && actualId.startsWith('tt')) {
+        try {
+          itemDetails = await fetchStremioMeta(type, actualId);
+        } catch (stremioErr) {
+          console.warn('Stremio meta error:', stremioErr);
+        }
+      }
+    }
+
+    if (!itemDetails) {
+      // Create minimal fallback meta object so player can still launch
+      itemDetails = typeof id === 'object' ? id : {
+        id: actualId,
+        title: 'Video Stream',
+        name: 'Video Stream',
+        overview: 'Streaming media item',
+        type: type
+      };
     }
 
     const isBookmarked = state.bookmarks.some(b => b.id === actualId && b.mediaType === type);
@@ -908,7 +926,7 @@ async function handleInfoClick(id, type) {
       itemDetails,
       type,
       isBookmarked,
-      handleWatchClick,
+      (clickedItem) => handleWatchClick(clickedItem || itemDetails, type),
       toggleBookmark,
       handleTrailerClick
     );
@@ -939,21 +957,38 @@ async function handleWatchClick(id, type) {
     let itemDetails = null;
     let actualId = typeof id === 'object' ? id.id : id;
 
-    if (typeof id === 'object' && (id.embedUrl || id.isCloudStream)) {
-      itemDetails = id;
+    if (typeof id === 'object' && (id.embedUrl || id.directUrl || id.streamUrl || id.isCloudStream || id.isStremioStream)) {
+      itemDetails = { ...id };
     } else if (typeof actualId === 'string' && actualId.startsWith('cs_')) {
       itemDetails = getCloudStreamVideoMeta(actualId);
     }
 
     if (!itemDetails) {
-      try {
-        itemDetails = await tmdb.getDetails(actualId, type);
-      } catch (tmdbErr) {
-        if (typeof actualId === 'string' && actualId.startsWith('tt')) {
-          itemDetails = await fetchStremioMeta(type, actualId);
+      if (typeof actualId === 'number' || (!isNaN(actualId) && !String(actualId).startsWith('tt'))) {
+        try {
+          itemDetails = await tmdb.getDetails(actualId, type);
+        } catch (tmdbErr) {
+          console.warn('TMDB details fetch note:', tmdbErr);
         }
-        if (!itemDetails) throw tmdbErr;
       }
+      
+      if (!itemDetails && typeof actualId === 'string' && actualId.startsWith('tt')) {
+        try {
+          itemDetails = await fetchStremioMeta(type, actualId);
+        } catch (stremioErr) {
+          console.warn('Stremio meta fetch note:', stremioErr);
+        }
+      }
+    }
+
+    if (!itemDetails) {
+      itemDetails = typeof id === 'object' ? id : {
+        id: actualId,
+        title: 'Video Stream',
+        name: 'Video Stream',
+        overview: 'Streaming media item',
+        type: type
+      };
     }
     
     // Look up watch history logs to see if we have a resume point

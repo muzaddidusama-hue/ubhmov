@@ -1,13 +1,16 @@
 import { tmdb } from '../tmdb.js';
 import { escapeHTML } from '../utils/security.js';
-import { getActiveStreamServers, fetchStremioStreams } from '../utils/apiManager.js';
+import { getActiveStreamServers, fetchStremioStreams, getActiveDebridService, resolveDebridStream } from '../utils/apiManager.js';
 import { isProxyActive, setProxyState, proxifyUrl, getCurrentProxyNode } from '../utils/proxyManager.js';
+
+let currentHlsInstance = null;
+let currentWebTorrentClient = null;
 
 /**
  * Initializes and manages the full-screen video player overlay.
- * Supports dynamic streaming servers, TV series season/episode selections,
- * Stremio add-on stream discovery, Next Episode overlay controls, and progress tracking.
- * @param {Object} item - TMDB details object for the title
+ * Supports dynamic streaming servers, HLS adaptive bitrate (.m3u8), WebTorrent P2P streams,
+ * Real-Debrid unfreezing, CloudStream direct embeds, Next Episode overlay controls, and progress tracking.
+ * @param {Object} item - TMDB/Cloudstream/Stremio details object
  * @param {string} type - 'movie' or 'tv'
  * @param {string} movieUrlTemplate - String template e.g., 'https://vidsrc.to/embed/movie/{id}'
  * @param {string} tvUrlTemplate - String template e.g., 'https://vidsrc.to/embed/tv/{id}/{season}/{episode}'
@@ -36,9 +39,22 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
   
   // Set Title Info safely
   playerTitle.textContent = item.title || item.name || 'Stream title';
+
+  // Helper to cleanup active HLS or WebTorrent instances
+  const destroyActiveEngines = () => {
+    if (currentHlsInstance) {
+      try { currentHlsInstance.destroy(); } catch (_) {}
+      currentHlsInstance = null;
+    }
+    if (currentWebTorrentClient) {
+      try { currentWebTorrentClient.destroy(); } catch (_) {}
+      currentWebTorrentClient = null;
+    }
+  };
   
   // Helper to load Iframe content
   const loadIframe = (url) => {
+    destroyActiveEngines();
     iframeRoot.innerHTML = `
       <iframe src="${url}" 
         allowfullscreen 
@@ -49,17 +65,129 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
     `;
   };
 
-  // Helper to load HTML5 direct video stream (e.g. from Stremio stream)
-  const loadDirectVideo = (streamUrl) => {
+  // Helper to load HTML5 direct video stream with universal HLS.js adaptive bitrate engine
+  const loadHlsOrDirectVideo = (streamUrl, subtitleTracks = []) => {
+    destroyActiveEngines();
+
     iframeRoot.innerHTML = `
-      <video src="${streamUrl}" 
-        controls 
-        autoplay 
-        playsinline 
-        style="width:100%; height:100%; object-fit:contain; background:#000; border-radius:14px;">
-        Your browser does not support HTML5 video streaming.
-      </video>
+      <div style="position:relative; width:100%; height:100%; background:#000; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+        <video id="active-html5-player" 
+          controls 
+          autoplay 
+          playsinline 
+          crossorigin="anonymous"
+          style="width:100%; height:100%; object-fit:contain; background:#000;">
+          ${subtitleTracks.map(t => `<track kind="subtitles" src="${t.url}" srclang="${t.lang || 'en'}" label="${t.label || t.lang || 'English'}" ${t.default ? 'default' : ''}>`).join('')}
+          Your browser does not support HTML5 video streaming.
+        </video>
+        <div id="video-stream-spinner" style="position:absolute; pointer-events:none; display:none;">
+          <span class="loader-spinner" style="width:40px; height:40px;"></span>
+        </div>
+      </div>
     `;
+
+    const videoEl = document.getElementById('active-html5-player');
+    const spinner = document.getElementById('video-stream-spinner');
+    if (!videoEl) return;
+
+    videoEl.addEventListener('waiting', () => { if (spinner) spinner.style.display = 'block'; });
+    videoEl.addEventListener('playing', () => { if (spinner) spinner.style.display = 'none'; });
+
+    const isHlsStream = streamUrl.includes('.m3u8') || streamUrl.includes('m3u8') || streamUrl.includes('application/x-mpegURL');
+
+    if (isHlsStream && window.Hls && Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 90
+      });
+      currentHlsInstance = hls;
+
+      hls.loadSource(streamUrl);
+      hls.attachMedia(videoEl);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        videoEl.play().catch(() => {});
+      });
+
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.warn('HLS Network error encountered, attempting recovery...');
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.warn('HLS Media error encountered, recovering media...');
+              hls.recoverMediaError();
+              break;
+            default:
+              console.error('Fatal HLS error, destroying engine:', data);
+              destroyActiveEngines();
+              break;
+          }
+        }
+      });
+    } else {
+      // Direct MP4 or Native browser HLS (Safari/iOS)
+      videoEl.src = streamUrl;
+      videoEl.play().catch(() => {});
+    }
+  };
+
+  // Helper to stream torrents directly in browser via WebTorrent
+  const loadWebTorrentStream = (infoHash, fileIdx) => {
+    destroyActiveEngines();
+
+    iframeRoot.innerHTML = `
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:1.25rem; padding:2rem; text-align:center; background:#0a0b0f; border-radius:14px;">
+        <div style="font-size:2.8rem;">🧲</div>
+        <div style="color:#fff; font-size:1.15rem; font-weight:700;">Streaming P2P Torrent in Browser</div>
+        <div id="torrent-status-msg" style="color:var(--accent-cyan); font-size:0.85rem;">Connecting to swarm peers...</div>
+        <div style="width:280px; height:6px; background:rgba(255,255,255,0.1); border-radius:10px; overflow:hidden;">
+          <div id="torrent-progress-bar" style="width:0%; height:100%; background:var(--accent-cyan); transition:width 0.3s;"></div>
+        </div>
+        <div id="webtorrent-video-container" style="width:100%; max-height:480px; display:none;"></div>
+      </div>
+    `;
+
+    if (window.WebTorrent) {
+      try {
+        const client = new window.WebTorrent();
+        currentWebTorrentClient = client;
+        const magnetUri = `magnet:?xt=urn:btih:${infoHash}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=wss%3A%2F%2Ftracker.openwebtorrent.com`;
+
+        client.add(magnetUri, (torrent) => {
+          const statusMsg = document.getElementById('torrent-status-msg');
+          const progressBar = document.getElementById('torrent-progress-bar');
+          const container = document.getElementById('webtorrent-video-container');
+
+          torrent.on('download', () => {
+            const percent = Math.round(torrent.progress * 100);
+            const speed = (torrent.downloadSpeed / 1024 / 1024).toFixed(1);
+            if (statusMsg) statusMsg.textContent = `Buffering: ${percent}% · ${speed} MB/s · ${torrent.numPeers} peers`;
+            if (progressBar) progressBar.style.width = `${percent}%`;
+          });
+
+          // Find video file
+          let file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv') || f.name.endsWith('.webm'));
+          if (fileIdx !== undefined && torrent.files[fileIdx]) file = torrent.files[fileIdx];
+
+          if (file && container) {
+            container.style.display = 'block';
+            file.renderTo(container, { autoplay: true, controls: true }, (err) => {
+              if (err) console.warn('WebTorrent render error:', err);
+            });
+          }
+        });
+
+        client.on('error', (err) => {
+          console.warn('WebTorrent client error:', err);
+        });
+      } catch (err) {
+        console.warn('Failed to start WebTorrent:', err);
+      }
+    }
   };
   
   // Helper to interpolate url placeholders
@@ -77,20 +205,37 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
     if (!serverSelect) return;
 
     const activeServers = getActiveStreamServers();
+    const isCloudStreamItem = item.embedUrl || item.directUrl || item.streamUrl || item.isCloudStream;
     const savedServer = localStorage.getItem('selected_stream_server') || (activeServers[0]?.id || 'multiembed');
 
     serverSelect.innerHTML = '';
 
     // CloudStream Direct Stream group (if item has embedUrl or directUrl)
-    if (item.embedUrl || item.directUrl || item.isCloudStream) {
+    if (isCloudStreamItem) {
       const csGroup = document.createElement('optgroup');
       csGroup.label = '☁️ CloudStream Plugin Stream';
       const opt = document.createElement('option');
       opt.value = 'cloudstream_direct';
-      opt.textContent = `▶ [${item.providerName || 'CloudStream'}] Embedded Stream`;
+      opt.textContent = `▶ [${item.providerName || 'CloudStream'}] Live Direct Stream`;
       opt.selected = true;
       csGroup.appendChild(opt);
       serverSelect.appendChild(csGroup);
+    }
+
+    // Stremio Add-on Streams group (if available)
+    if (stremioStreamsList.length > 0) {
+      const stremioGroup = document.createElement('optgroup');
+      stremioGroup.label = `⚡ Stremio Streams (${stremioStreamsList.length})`;
+
+      stremioStreamsList.forEach((st, idx) => {
+        const opt = document.createElement('option');
+        opt.value = `stremio_${idx}`;
+        const streamTypeIcon = st.isTorrent ? '🧲 ' : '▶ ';
+        opt.textContent = `${streamTypeIcon}[${(st.addonName || '').substring(0, 12)}] ${st.title || st.name}`;
+        if (opt.value === savedServer && !isCloudStreamItem) opt.selected = true;
+        stremioGroup.appendChild(opt);
+      });
+      serverSelect.appendChild(stremioGroup);
     }
 
     // Standard Embed Servers group
@@ -101,44 +246,34 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
       const opt = document.createElement('option');
       opt.value = srv.id;
       opt.textContent = srv.name;
-      if (srv.id === savedServer && !item.embedUrl) opt.selected = true;
+      if (srv.id === savedServer && !isCloudStreamItem && stremioStreamsList.length === 0) opt.selected = true;
       embedGroup.appendChild(opt);
     });
     serverSelect.appendChild(embedGroup);
-
-    // Stremio Add-on Streams group (if available)
-    if (stremioStreamsList.length > 0) {
-      const stremioGroup = document.createElement('optgroup');
-      stremioGroup.label = '⚡ Stremio Addon Streams';
-
-      stremioStreamsList.forEach((st, idx) => {
-        const opt = document.createElement('option');
-        opt.value = `stremio_${idx}`;
-        const torrentTag = st.isTorrent ? '🧲 ' : '▶ ';
-        opt.textContent = `${torrentTag}[${(st.addonName || '').substring(0, 12)}] ${st.title || st.name}`;
-        if (opt.value === savedServer && !item.embedUrl) opt.selected = true;
-        stremioGroup.appendChild(opt);
-      });
-      serverSelect.appendChild(stremioGroup);
-    }
   };
 
   // Helper to refresh URL based on selected server
-  const refreshPlayerUrl = () => {
+  const refreshPlayerUrl = async () => {
     const serverSelect = document.getElementById('player-server-select');
     const activeServers = getActiveStreamServers();
-    const fallbackId = (item.embedUrl || item.isCloudStream) ? 'cloudstream_direct' : (activeServers[0]?.id || 'multiembed');
+    const isCloudStreamItem = item.embedUrl || item.directUrl || item.streamUrl || item.isCloudStream;
+    const fallbackId = isCloudStreamItem ? 'cloudstream_direct' : (activeServers[0]?.id || 'multiembed');
     const selectedServer = serverSelect ? serverSelect.value : fallbackId;
-    localStorage.setItem('selected_stream_server', selectedServer);
+    
+    if (!isCloudStreamItem) {
+      localStorage.setItem('selected_stream_server', selectedServer);
+    }
 
     // Check if CloudStream direct embed/stream is active
-    if (selectedServer === 'cloudstream_direct' || (item.embedUrl && !selectedServer.startsWith('stremio_') && selectedServer !== 'multiembed' && !activeServers.some(s => s.id === selectedServer))) {
+    if (selectedServer === 'cloudstream_direct' || (isCloudStreamItem && !selectedServer.startsWith('stremio_'))) {
       if (item.embedUrl) {
         loadIframe(item.embedUrl);
         return;
       }
       if (item.directUrl || item.streamUrl) {
-        loadDirectVideo(item.directUrl || item.streamUrl);
+        const streamSrc = item.directUrl || item.streamUrl;
+        const proxied = isProxyActive() ? proxifyUrl(streamSrc) : streamSrc;
+        loadHlsOrDirectVideo(proxied);
         return;
       }
     }
@@ -148,42 +283,59 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
       const streamIdx = parseInt(selectedServer.replace('stremio_', ''));
       const stremioItem = stremioStreamsList[streamIdx];
       if (stremioItem) {
-        // Direct HTTP stream — play in HTML5 video element
+        // 1. Direct HTTP/HLS stream
         if (stremioItem.url && (stremioItem.url.startsWith('http://') || stremioItem.url.startsWith('https://'))) {
           const directUrl = isProxyActive() ? proxifyUrl(stremioItem.url) : stremioItem.url;
-          loadDirectVideo(directUrl);
+          loadHlsOrDirectVideo(directUrl);
           return;
         }
-        // External/iframe-able URL
+        
+        // 2. External iframe stream
         if (stremioItem.externalUrl && stremioItem.externalUrl.startsWith('http')) {
           loadIframe(stremioItem.externalUrl);
           return;
         }
-        // Torrent stream — can't play in browser, show Stremio launcher card
-        if (stremioItem.isTorrent || stremioItem.infoHash) {
+        
+        // 3. Torrent / InfoHash stream: Auto-resolve via Real-Debrid/Torbox or WebTorrent
+        if (stremioItem.infoHash) {
+          const debrid = getActiveDebridService();
+          if (debrid) {
+            iframeRoot.innerHTML = `
+              <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:1rem; text-align:center;">
+                <span class="loader-spinner" style="width:40px; height:40px;"></span>
+                <p style="color:var(--text-high); font-weight:600;">Unfreezing stream via ${debrid.service.name}...</p>
+              </div>
+            `;
+            const resolvedUrl = await resolveDebridStream(stremioItem.infoHash, stremioItem.fileIdx);
+            if (resolvedUrl) {
+              loadHlsOrDirectVideo(resolvedUrl);
+              return;
+            }
+          }
+
+          // In-browser WebTorrent streaming
+          if (window.WebTorrent) {
+            loadWebTorrentStream(stremioItem.infoHash, stremioItem.fileIdx);
+            return;
+          }
+
+          // Fallback Stremio Deep Link
           const imdbIdLocal = item.imdb_id || item.external_ids?.imdb_id || '';
           const streamTypeLocal = type === 'tv' ? 'series' : 'movie';
           const stremioWebUrl = `https://web.stremio.com/#/detail/${streamTypeLocal}/${imdbIdLocal}`;
           iframeRoot.innerHTML = `
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1.5rem;padding:2rem;text-align:center;background:#0a0b0f;border-radius:14px;">
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:1.5rem; padding:2rem; text-align:center; background:#0a0b0f; border-radius:14px;">
               <div style="font-size:3rem;">🧲</div>
-              <div style="color:#fff;font-size:1.1rem;font-weight:700;">Torrent Stream Found</div>
-              <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;max-width:420px;line-height:1.6;">
-                This stream (<strong style="color:#00f2fe;">${stremioItem.addonName}</strong>) is a torrent/magnet link. 
-                Browsers can't play torrents directly. Open it in the Stremio app or Stremio Web to stream instantly.
+              <div style="color:#fff; font-size:1.1rem; font-weight:700;">Torrent Stream Detected</div>
+              <div style="color:rgba(255,255,255,0.6); font-size:0.85rem; max-width:420px; line-height:1.6;">
+                Stream from <strong style="color:var(--accent-cyan);">${stremioItem.addonName}</strong> is ready. Open in Stremio app or configure a Debrid API key in Admin Settings for instant playback.
               </div>
-              <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;">
+              <div style="display:flex; gap:1rem; flex-wrap:wrap; justify-content:center;">
                 <a href="${stremioWebUrl}" target="_blank" rel="noopener" 
-                   style="background:linear-gradient(135deg,#00f2fe,#4facfe);color:#000;font-weight:700;padding:0.65rem 1.5rem;border-radius:8px;text-decoration:none;font-size:0.9rem;">
+                   style="background:var(--accent-gradient); color:#000; font-weight:700; padding:0.65rem 1.5rem; border-radius:8px; text-decoration:none; font-size:0.9rem;">
                   ▶ Open in Stremio Web
                 </a>
-                ${stremioItem.infoHash ? `
-                <a href="magnet:?xt=urn:btih:${stremioItem.infoHash}" 
-                   style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-weight:600;padding:0.65rem 1.5rem;border-radius:8px;text-decoration:none;font-size:0.9rem;">
-                  🧲 Copy Magnet
-                </a>` : ''}
               </div>
-              <div style="color:rgba(255,255,255,0.35);font-size:0.75rem;">Quality: ${stremioItem.title || stremioItem.name}</div>
             </div>
           `;
           return;
@@ -217,18 +369,35 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
   // Initial population of servers dropdown
   populateServerSelect();
 
-  // Async query for Stremio Addon Streams using IMDB ID
-  const imdbId = item.imdb_id || item.external_ids?.imdb_id || '';
-  if (imdbId) {
-    fetchStremioStreams(imdbId, type, currentSeason, currentEpisode).then(streams => {
-      if (streams && streams.length > 0) {
-        stremioStreamsList = streams;
-        populateServerSelect();
+  // Async query for Stremio Addon Streams with auto IMDB ID lookup
+  const loadStremioStreamsAsync = async () => {
+    let resolvedImdbId = item.imdb_id || item.external_ids?.imdb_id || '';
+
+    // If IMDB ID is not on item, fetch it from TMDB external IDs
+    if (!resolvedImdbId && typeof item.id === 'number') {
+      try {
+        const extData = await tmdb.getExternalIds(item.id, type);
+        if (extData && extData.imdb_id) {
+          resolvedImdbId = extData.imdb_id;
+          item.imdb_id = resolvedImdbId;
+        }
+      } catch (_) {}
+    }
+
+    if (resolvedImdbId) {
+      try {
+        const streams = await fetchStremioStreams(resolvedImdbId, type, currentSeason, currentEpisode);
+        if (streams && streams.length > 0) {
+          stremioStreamsList = streams;
+          populateServerSelect();
+        }
+      } catch (err) {
+        console.warn('Stremio streams query completed with notice:', err);
       }
-    }).catch(err => {
-      console.warn('Stremio streams query completed with notice:', err);
-    });
-  }
+    }
+  };
+
+  loadStremioStreamsAsync();
 
   // Configure Server Selector Change listener
   const serverSelect = document.getElementById('player-server-select');
@@ -535,7 +704,8 @@ export async function openPlayerOverlay(item, type, movieUrlTemplate, tvUrlTempl
     // Clear redirect hijack blocker when player is closed
     window.onbeforeunload = null;
     
-    // Unload player to stop any streaming background audio/video playback
+    // Unload player and destroy HLS / WebTorrent engines to stop background streaming
+    destroyActiveEngines();
     iframeRoot.innerHTML = '';
     overlay.classList.remove('player-active');
     if (nextBtn) {

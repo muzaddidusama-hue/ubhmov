@@ -61,7 +61,7 @@ export function createMovieCard(item, mediaType, onClick, onRemove = null) {
     </div>
   `;
   
-  card.addEventListener('click', () => onClick(item.id, type));
+  card.addEventListener('click', () => onClick(item, type));
   
   if (onRemove) {
     card.querySelector('.card-remove-btn')?.addEventListener('click', (e) => {

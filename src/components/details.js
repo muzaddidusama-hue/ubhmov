@@ -177,7 +177,7 @@ export function populateDetailsModal(item, type, isBookmarked, onPlay, onBookmar
   const trailerBtn = document.getElementById('modal-trailer-btn');
 
   playBtn.addEventListener('click', () => {
-    onPlay(item.id, type);
+    onPlay(item, type);
   });
 
   bookmarkBtn.addEventListener('click', () => {

@@ -1818,6 +1818,7 @@ export async function fetchLiveCloudStreamPluginItems(plugin) {
             const title = attr.canonicalTitle || attr.titles?.en || attr.titles?.en_jp || 'Anime Title';
             const id = `cs_anime_${item.id}`;
 
+            const animeEmbed = `https://vidsrc.to/embed/tv/${item.id}/1/1`;
             cacheCloudStreamVideoMeta(id, {
               id,
               title,
@@ -1829,6 +1830,7 @@ export async function fetchLiveCloudStreamPluginItems(plugin) {
               release_date: attr.startDate || '2026',
               type: 'tv',
               isCloudStream: true,
+              embedUrl: animeEmbed,
               providerName: plugin.name
             });
 
@@ -1843,6 +1845,7 @@ export async function fetchLiveCloudStreamPluginItems(plugin) {
               type: 'tv',
               isCloudStream: true,
               isAnime: true,
+              embedUrl: animeEmbed,
               providerName: plugin.name,
               icon: '🎌'
             });
@@ -1863,8 +1866,29 @@ export async function fetchLiveCloudStreamPluginItems(plugin) {
       const data = await res.json();
       if (data && Array.isArray(data.metas)) {
         data.metas.slice(0, 12).forEach(m => {
+          const streamId = m.imdb_id || m.id;
+          const movieEmbed = `https://vidsrc.to/embed/movie/${streamId}`;
+          
+          cacheCloudStreamVideoMeta(streamId, {
+            id: streamId,
+            imdb_id: m.imdb_id || (streamId.startsWith('tt') ? streamId : ''),
+            title: m.name || m.title,
+            name: m.name || m.title,
+            poster: m.poster,
+            posterUrl: m.poster,
+            backdrop_path: m.background || m.poster,
+            overview: m.description || 'Stremio movie catalog release',
+            vote_average: parseFloat(m.imdbRating) || 8.0,
+            release_date: m.year || '2026',
+            type: 'movie',
+            isCloudStream: true,
+            embedUrl: movieEmbed,
+            providerName: plugin.name
+          });
+
           results.push({
-            id: m.imdb_id || m.id,
+            id: streamId,
+            imdb_id: m.imdb_id || (streamId.startsWith('tt') ? streamId : ''),
             title: m.name || m.title,
             name: m.name || m.title,
             poster: m.poster,
@@ -1873,6 +1897,7 @@ export async function fetchLiveCloudStreamPluginItems(plugin) {
             release_date: m.year || '2026',
             type: 'movie',
             isCloudStream: true,
+            embedUrl: movieEmbed,
             providerName: plugin.name,
             icon: '🎬'
           });
