@@ -562,7 +562,133 @@ export function generateStremioTitlePoster(title, badgeText = '⚡ STREMIO') {
 }
 
 /**
- * Resolves all active catalog feeds from all running/active Stremio add-ons
+ * Fetches a URL with timeout + CORS proxy fallback
+ * @param {string} url
+ * @returns {Promise<any|null>}
+ */
+async function fetchJsonWithProxy(url, timeoutMs = 6000) {
+  const tryFetch = async (target) => {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), timeoutMs);
+      const res = await fetch(target, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+      clearTimeout(t);
+      if (res.ok) return res.json();
+    } catch (_) {}
+    return null;
+  };
+
+  const direct = await tryFetch(url);
+  if (direct) return direct;
+
+  const proxied = await tryFetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`);
+  if (proxied) return proxied;
+
+  // Try allorigins as second proxy
+  const ao = await tryFetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+  if (ao && ao.contents) {
+    try { return JSON.parse(ao.contents); } catch (_) {}
+  }
+  return null;
+}
+
+/**
+ * Fetches the live manifest.json from an addon and discovers its real catalog endpoints.
+ * Returns actual metas arrays from those endpoints.
+ * @param {Object} addon - stored addon entry with at least { id, name, manifestUrl }
+ * @returns {Promise<Array>} Array of {feed, items} with real posters from the addon's own server
+ */
+export async function fetchLiveAddonCatalogItems(addon) {
+  if (!addon || !addon.manifestUrl) return [];
+
+  const baseUrl = addon.manifestUrl.replace(/\/manifest\.json$/i, '').replace(/\/+$/, '');
+
+  // Step 1: Fetch the real live manifest to get current catalog definitions
+  const manifest = await fetchJsonWithProxy(addon.manifestUrl);
+  const liveCatalogs = manifest && Array.isArray(manifest.catalogs) ? manifest.catalogs : [];
+  const storedCatalogs = Array.isArray(addon.catalogs) ? addon.catalogs : [];
+  const catalogs = liveCatalogs.length > 0 ? liveCatalogs : storedCatalogs;
+
+  // This addon is a pure stream scraper — no catalog endpoints exist
+  if (!catalogs || catalogs.length === 0) {
+    return [];
+  }
+
+  const results = [];
+
+  for (const cat of catalogs) {
+    const rawType = cat.type || 'movie';
+    const catId = cat.id || 'top';
+    const isAdult = rawType === 'other' || ['porn','xxx','adult','hentai'].some(k => rawType.toLowerCase().includes(k) || catId.toLowerCase().includes(k) || (cat.name || '').toLowerCase().includes(k));
+    const icon = isAdult ? '🔞' : (rawType === 'movie' ? '🍿' : (rawType === 'series' || rawType === 'tv' ? '📺' : '🎬'));
+
+    const feed = {
+      feedId: `${addon.id}_${rawType}_${catId}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
+      addonId: addon.id,
+      addonName: addon.name,
+      rawType,
+      catalogType: rawType === 'series' ? 'tv' : 'movie',
+      catalogId: catId,
+      catalogName: cat.name ? `${addon.name} — ${cat.name}` : `${addon.name} — ${rawType} ${catId}`,
+      endpoint: `${baseUrl}/catalog/${rawType}/${catId}.json`,
+      icon
+    };
+
+    // Try catalog endpoint variations
+    const endpoints = [
+      `${baseUrl}/catalog/${rawType}/${catId}.json`,
+      `${baseUrl}/catalog/${rawType}/${catId}/skip=0.json`,
+      `${baseUrl}/catalog/${rawType}/${catId}/genre=All.json`,
+      `${baseUrl}/catalog/${rawType}/${catId}/genre=All/skip=0.json`
+    ];
+
+    let data = null;
+    for (const ep of endpoints) {
+      data = await fetchJsonWithProxy(ep);
+      if (data && Array.isArray(data.metas) && data.metas.length > 0) break;
+    }
+
+    const rawMetas = data && Array.isArray(data.metas) ? data.metas : [];
+    const items = rawMetas.map(meta => {
+      const title = meta.name || meta.title || 'Untitled';
+      const imdbId = meta.id || '';
+      const type = (rawType === 'series' || rawType === 'tv') ? 'tv' : 'movie';
+
+      let poster = meta.poster;
+      if (!poster || !String(poster).startsWith('http')) {
+        poster = imdbId.startsWith('tt')
+          ? `https://images.metahub.space/poster/medium/${imdbId}/img`
+          : generateStremioTitlePoster(title, `${icon} ${addon.name}`);
+      }
+
+      let background = meta.background;
+      if ((!background || !String(background).startsWith('http')) && imdbId.startsWith('tt')) {
+        background = `https://images.metahub.space/background/medium/${imdbId}/img`;
+      }
+
+      return {
+        id: imdbId || meta.id,
+        imdb_id: imdbId || meta.id,
+        title, name: title, type, media_type: type,
+        poster, posterUrl: poster,
+        backdrop: background, backdrop_path: background,
+        vote_average: meta.imdbRating ? parseFloat(meta.imdbRating) : 0,
+        release_date: meta.releaseInfo || (meta.year ? String(meta.year) : ''),
+        overview: meta.description || '',
+        genres: Array.isArray(meta.genres) ? meta.genres : [],
+        isStremioStream: true,
+        sourceEngine: addon.name
+      };
+    });
+
+    results.push({ feed, items });
+  }
+
+  return results;
+}
+
+/**
+ * Resolves all active catalog feeds from all running/active Stremio add-ons (sync, from stored data)
  * @returns {Array<Object>} List of feed descriptors
  */
 export function getActiveAddonCatalogFeeds() {
@@ -577,66 +703,38 @@ export function getActiveAddonCatalogFeeds() {
       addon.catalogs.forEach(cat => {
         const rawType = cat.type || 'movie';
         const catId = cat.id || 'top';
-        const isAdult = rawType === 'other' || rawType.toLowerCase().includes('xxx') || rawType.toLowerCase().includes('porn') || catId.toLowerCase().includes('porn') || (cat.name && cat.name.toLowerCase().includes('porn'));
+        const isAdult = ['porn','xxx','adult','hentai','other'].some(k => rawType.toLowerCase().includes(k) || catId.toLowerCase().includes(k) || (cat.name||'').toLowerCase().includes(k));
         const icon = isAdult ? '🔞' : (rawType === 'movie' ? '🍿' : (rawType === 'series' || rawType === 'tv' ? '📺' : '🎬'));
-        
         feeds.push({
           feedId: `${addon.id}_${rawType}_${catId}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
           addonId: addon.id,
           addonName: addon.name,
-          rawType: rawType,
+          rawType,
           catalogType: rawType === 'series' ? 'tv' : (rawType === 'other' ? 'movie' : rawType),
           catalogId: catId,
           catalogName: cat.name ? `${addon.name} - ${cat.name}` : `${addon.name} - ${rawType} ${catId}`,
           endpoint: `${baseUrl}/catalog/${rawType}/${catId}.json`,
           fallbackEndpoint: `${baseUrl}/catalog/${rawType}/${catId}/skip=0.json`,
-          icon: icon
+          icon,
+          addonManifestUrl: addon.manifestUrl
         });
       });
     } else if (addon.id === 'cinemeta') {
-      // Cinemeta default catalogs
       feeds.push({
-        feedId: 'cinemeta_movie_top',
-        addonId: addon.id,
-        addonName: addon.name,
-        rawType: 'movie',
-        catalogType: 'movie',
-        catalogId: 'top',
+        feedId: 'cinemeta_movie_top', addonId: addon.id, addonName: addon.name,
+        rawType: 'movie', catalogType: 'movie', catalogId: 'top',
         catalogName: `${addon.name} - Top Movies`,
-        endpoint: `${baseUrl}/catalog/movie/top.json`,
-        icon: '🍿'
+        endpoint: `${baseUrl}/catalog/movie/top.json`, icon: '🍿', addonManifestUrl: addon.manifestUrl
       });
       feeds.push({
-        feedId: 'cinemeta_series_top',
-        addonId: addon.id,
-        addonName: addon.name,
-        rawType: 'series',
-        catalogType: 'tv',
-        catalogId: 'top',
+        feedId: 'cinemeta_series_top', addonId: addon.id, addonName: addon.name,
+        rawType: 'series', catalogType: 'tv', catalogId: 'top',
         catalogName: `${addon.name} - Popular TV Series`,
-        endpoint: `${baseUrl}/catalog/series/top.json`,
-        icon: '📺'
-      });
-    } else {
-      // Proactively probe add-on's declared types (e.g. "other", "movie", "series")
-      const types = Array.isArray(addon.types) ? addon.types : ['movie'];
-      types.forEach(t => {
-        const isAdult = t === 'other' || t.toLowerCase().includes('xxx') || t.toLowerCase().includes('porn') || (addon.name && addon.name.toLowerCase().includes('porn'));
-        const icon = isAdult ? '🔞' : (t === 'movie' ? '🍿' : (t === 'series' || t === 'tv' ? '📺' : '🎬'));
-        feeds.push({
-          feedId: `${addon.id}_${t}_default`.replace(/[^a-zA-Z0-9_-]/g, '_'),
-          addonId: addon.id,
-          addonName: addon.name,
-          rawType: t,
-          catalogType: t === 'series' ? 'tv' : (t === 'other' ? 'movie' : t),
-          catalogId: t,
-          catalogName: `${addon.name} - ${t.toUpperCase()}`,
-          endpoint: `${baseUrl}/catalog/${t}/${t}.json`,
-          fallbackEndpoint: `${baseUrl}/catalog/${t}/top.json`,
-          icon: icon
-        });
+        endpoint: `${baseUrl}/catalog/series/top.json`, icon: '📺', addonManifestUrl: addon.manifestUrl
       });
     }
+    // Stream-only scrapers (no catalogs) are excluded from static feeds;
+    // stremioSection.js handles them via fetchLiveAddonCatalogItems at render time
   });
 
   return feeds;
