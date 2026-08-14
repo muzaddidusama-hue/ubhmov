@@ -29,7 +29,8 @@ import {
   POPULAR_CLOUDSTREAM_REPOS_PRESETS,
   getCloudStreamVideoMeta,
   fetchLiveCloudStreamPluginItems,
-  VERIFIED_ADULT_STREAMS_CATALOG
+  VERIFIED_ADULT_STREAMS_CATALOG,
+  getAllCloudStreamVideos
 } from './utils/apiManager.js';
 import {
   isProxyActive,
@@ -1510,16 +1511,27 @@ function openSectionGallery(config) {
   currentGalleryPage = 1;
   currentGalleryItems = Array.isArray(config.items) ? [...config.items] : [];
 
+  if (currentGalleryItems.length === 0 && (config.isCloudStream || config.feed?.isCloudStream)) {
+    currentGalleryItems = getAllCloudStreamVideos();
+  }
+
   if (titleEl) titleEl.textContent = config.title || 'Section Gallery';
   if (subtitleEl) subtitleEl.textContent = config.subtitle || `Showing ${currentGalleryItems.length} available titles`;
   if (iconEl) iconEl.textContent = config.icon || (config.feed?.icon || '🎬');
   if (searchInput) searchInput.value = '';
   if (sortSelect) sortSelect.value = 'default';
 
-  // Check if we can load more pages (for TMDB categories)
+  // Check if we can load more pages (for TMDB categories or full CloudStream library)
   if (loadMoreWrap) {
     if (config.categoryKey && ['trending', 'popular_series', 'top_rated', 'now_playing'].includes(config.categoryKey)) {
       loadMoreWrap.classList.remove('hidden');
+    } else if (config.isCloudStream || config.feed?.isCloudStream) {
+      const allStreams = getAllCloudStreamVideos();
+      if (currentGalleryItems.length < allStreams.length) {
+        loadMoreWrap.classList.remove('hidden');
+      } else {
+        loadMoreWrap.classList.add('hidden');
+      }
     } else {
       loadMoreWrap.classList.add('hidden');
     }
@@ -1540,13 +1552,18 @@ function renderGalleryGrid() {
   const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
   const sortMode = sortSelect ? sortSelect.value : 'default';
 
-  // Apply Search Query filter
+  // Apply Search Query filter (searches current section or whole master library if in stream gallery)
   if (query) {
-    filtered = filtered.filter(item => {
+    let searchPool = filtered;
+    if ((currentGallerySection?.isCloudStream || currentGallerySection?.feed?.isCloudStream) && filtered.length < 50) {
+      // Expand search pool to master catalog so user can find ANY stream from server
+      searchPool = getAllCloudStreamVideos();
+    }
+    filtered = searchPool.filter(item => {
       const title = (item.title || item.name || '').toLowerCase();
       const overview = (item.overview || '').toLowerCase();
-      const actress = (item.actress || '').toLowerCase();
-      return title.includes(query) || overview.includes(query) || actress.includes(query);
+      const category = (item.category || item.providerName || '').toLowerCase();
+      return title.includes(query) || overview.includes(query) || category.includes(query);
     });
   }
 
@@ -1565,7 +1582,7 @@ function renderGalleryGrid() {
 
   if (subtitleEl && currentGallerySection) {
     subtitleEl.textContent = query 
-      ? `Found ${filtered.length} matches (out of ${currentGalleryItems.length})` 
+      ? `Found ${filtered.length} matches` 
       : (currentGallerySection.subtitle || `Showing ${currentGalleryItems.length} available titles`);
   }
 
@@ -1576,7 +1593,7 @@ function renderGalleryGrid() {
       <div style="grid-column: 1 / -1; padding: 3rem 1rem; text-align: center; color: var(--text-med);">
         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔍</div>
         <h4 style="color: var(--text-high); font-size: 1.1rem; margin-bottom: 0.25rem;">No matching videos found</h4>
-        <p style="font-size: 0.85rem;">Try adjusting your filter search term.</p>
+        <p style="font-size: 0.85rem;">Try adjusting your search terms or view all streams.</p>
       </div>
     `;
     return;
@@ -1626,9 +1643,9 @@ function initSectionGalleryListeners() {
     }
   });
 
-  // Load More Button handler for paginated categories
+  // Load More Button handler for paginated categories and master stream library
   loadMoreBtn?.addEventListener('click', async () => {
-    if (!currentGallerySection || !currentGallerySection.categoryKey) return;
+    if (!currentGallerySection) return;
     currentGalleryPage++;
 
     if (loadingIndicator) loadingIndicator.classList.remove('hidden');
@@ -1650,6 +1667,11 @@ function initSectionGalleryListeners() {
       } else if (catKey === 'now_playing') {
         const res = await tmdb.getNowPlaying(currentGalleryPage);
         newResults = res.results || [];
+      } else if (currentGallerySection.isCloudStream || currentGallerySection.feed?.isCloudStream) {
+        const allStreams = getAllCloudStreamVideos();
+        const existingIds = new Set(currentGalleryItems.map(i => i.id));
+        const remaining = allStreams.filter(s => !existingIds.has(s.id));
+        newResults = remaining.slice(0, 24);
       }
 
       if (newResults.length > 0) {
@@ -1664,7 +1686,7 @@ function initSectionGalleryListeners() {
         showToast(`Loaded ${newResults.length} more titles.`, 'success');
       } else {
         document.getElementById('view-all-load-more-wrap')?.classList.add('hidden');
-        showToast('All available pages loaded.', 'info');
+        showToast('All available videos loaded.', 'info');
       }
     } catch (err) {
       showToast('Failed to load more videos: ' + err.message, 'error');

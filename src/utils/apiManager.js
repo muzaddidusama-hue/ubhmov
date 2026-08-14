@@ -1,4 +1,4 @@
-﻿import { CONFIG } from '../../config.js';
+import { CONFIG } from '../../config.js';
 import { escapeHTML, sanitizeUrl } from './security.js';
 
 // Default built-in streaming server embed templates
@@ -4920,7 +4920,7 @@ export const VERIFIED_ADULT_STREAMS_CATALOG = [
  * @param {Object} plugin - CloudStream plugin record
  * @returns {Promise<Array>} List of video items with real poster images & streams
  */
-export async function fetchLiveCloudStreamPluginItems(plugin) {
+export async function fetchLiveCloudStreamPluginItems(plugin, fetchAll = false) {
   if (!plugin || plugin.active === false) return [];
 
   const results = [];
@@ -5011,7 +5011,7 @@ export async function fetchLiveCloudStreamPluginItems(plugin) {
       pool = VERIFIED_ADULT_STREAMS_CATALOG;
     }
 
-    const maxItems = Math.min(pool.length, 12);
+    const maxItems = fetchAll ? pool.length : Math.min(pool.length, 12);
     const selectedVideos = pool.slice(0, maxItems);
 
     selectedVideos.forEach((v) => {
@@ -5192,3 +5192,36 @@ function cacheCloudStreamVideoMeta(id, meta) {
 export function getCloudStreamVideoMeta(id) {
   return cloudStreamVideoCache.get(id) || null;
 }
+
+/**
+ * Return all 344+ verified English video streams formatted for the full gallery modal
+ */
+export function getAllCloudStreamVideos() {
+  return VERIFIED_ADULT_STREAMS_CATALOG.map(v => {
+    const vidId = `cs_master_${v.id}`;
+    const embedUrl = `https://www.eporner.com/embed/${v.id}/`;
+    const meta = {
+      id: vidId,
+      title: v.title,
+      name: v.title,
+      poster: v.thumb,
+      posterUrl: v.thumb,
+      backdrop_path: v.thumb,
+      overview: `English 1080p Stream · Duration: ${v.duration} · Views: ${(v.views || 0).toLocaleString()} · Category: ${v.category}`,
+      vote_average: parseFloat(v.rate) ? parseFloat(v.rate) * 2 : 8.8,
+      release_date: '2025-01-15',
+      type: 'movie',
+      isCloudStream: true,
+      isNsfw: true,
+      embedUrl: embedUrl,
+      directUrl: embedUrl,
+      providerName: 'CloudStream Master',
+      duration: v.duration,
+      views: v.views,
+      icon: '🔞'
+    };
+    cacheCloudStreamVideoMeta(vidId, meta);
+    return meta;
+  });
+}
+

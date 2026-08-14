@@ -3,7 +3,8 @@ import {
   fetchLiveAddonCatalogItems,
   getCloudStreamPlugins,
   fetchLiveCloudStreamPluginItems,
-  generateStremioTitlePoster
+  generateStremioTitlePoster,
+  getAllCloudStreamVideos
 } from '../utils/apiManager.js';
 import { escapeHTML, sanitizeUrl } from '../utils/security.js';
 
@@ -31,7 +32,7 @@ export function createStremioServersSection(callbacks = {}) {
     sectionWrapper.innerHTML = `
       <div class="stremio-video-section-container">
         <!-- Hero Hub Header -->
-        <div class="stremio-stream-hub-header">
+        <div class="stremio-stream-hub-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
           <div class="stremio-stream-title-group">
             <div class="stremio-hub-badge">
               <span class="stremio-hub-pulse-dot"></span>
@@ -47,6 +48,10 @@ export function createStremioServersSection(callbacks = {}) {
               Live catalogs & streaming scrapers fetched directly from active Stremio add-ons and CloudStream extension plugins.
             </p>
           </div>
+          <button id="stremio-hub-see-all-master-btn" class="primary-btn accent-glow-btn" style="padding:0.6rem 1.25rem; font-size:0.85rem; display:inline-flex; align-items:center; gap:0.5rem; margin-top:0.35rem; cursor:pointer;">
+            <span>🔥 View All 340+ Streams</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
         </div>
 
         <!-- Direct Stream Quick Launcher -->
@@ -158,7 +163,8 @@ export function createStremioServersSection(callbacks = {}) {
             catalogName: `${plugin.name} - Latest Video Feeds`,
             addonName: `CloudStream (${plugin.name})`,
             icon,
-            isCloudStream: true
+            isCloudStream: true,
+            plugin: plugin
           };
           appendCarouselRow(container, feed, items);
         } else {
@@ -174,6 +180,20 @@ export function createStremioServersSection(callbacks = {}) {
     });
 
     await Promise.all([...stremioTasks, ...csTasks]);
+
+    // Wire Master See All Streams button
+    sectionWrapper.querySelector('#stremio-hub-see-all-master-btn')?.addEventListener('click', () => {
+      const allStreams = getAllCloudStreamVideos();
+      window.dispatchEvent(new CustomEvent('open-section-gallery', {
+        detail: {
+          title: 'All Video Streams',
+          subtitle: `Complete master library · ${allStreams.length} verified English HD streams available`,
+          icon: '🔞',
+          items: allStreams,
+          isCloudStream: true
+        }
+      }));
+    });
 
     if (container.children.length === 0) {
       container.innerHTML = `
@@ -224,15 +244,26 @@ export function createStremioServersSection(callbacks = {}) {
     const carousel = row.querySelector(`#carousel-${feedId}`);
     if (carousel) renderFeedCards(items, carousel, feed);
 
-    // Attach See All gallery opener
-    const handleSeeAllFeed = () => {
+    // Attach See All gallery opener with full pool resolution
+    const handleSeeAllFeed = async () => {
+      let fullItems = items;
+      if (feed.isCloudStream && feed.plugin) {
+        try {
+          const allPluginItems = await fetchLiveCloudStreamPluginItems(feed.plugin, true);
+          if (allPluginItems && allPluginItems.length > 0) {
+            fullItems = allPluginItems;
+          }
+        } catch (_) {}
+      }
       window.dispatchEvent(new CustomEvent('open-section-gallery', {
         detail: {
           title: feed.catalogName,
-          subtitle: `From ${feed.addonName} · ${items.length} titles available`,
+          subtitle: `From ${feed.addonName} · ${fullItems.length} videos available`,
           icon: feed.icon || (feed.isCloudStream ? '☁️' : '⚡'),
-          items: items,
-          feed: feed
+          items: fullItems,
+          feed: feed,
+          isCloudStream: feed.isCloudStream,
+          plugin: feed.plugin
         }
       }));
     };
