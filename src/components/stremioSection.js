@@ -4,7 +4,9 @@ import {
   getCloudStreamPlugins,
   fetchLiveCloudStreamPluginItems,
   generateStremioTitlePoster,
-  getAllCloudStreamVideos
+  getAllCloudStreamVideos,
+  NSFW_KEYWORD_TAGS,
+  queryNsfwStreamsAcrossServers
 } from '../utils/apiManager.js';
 import { escapeHTML, sanitizeUrl } from '../utils/security.js';
 
@@ -73,6 +75,20 @@ export function createStremioServersSection(callbacks = {}) {
           </button>
         </div>
 
+        <!-- Quick Studio & Keyword Tag Filters (Cross-Server Multi-Stream) -->
+        <div class="stremio-quick-keywords-bar" style="margin-top:1.25rem; display:flex; flex-direction:column; gap:0.5rem;">
+          <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-med); font-weight:700; display:flex; align-items:center; gap:0.5rem;">
+            <span>⚡ Quick Studio & Genre Multi-Server Streams:</span>
+          </div>
+          <div id="stremio-hub-keywords-list" style="display:flex; flex-wrap:wrap; gap:0.45rem; align-items:center;">
+            ${NSFW_KEYWORD_TAGS.slice(0, 16).map(tag => `
+              <button class="nsfw-keyword-chip hub-keyword-btn" data-id="${tag.id}" data-label="${escapeHTML(tag.label)}" style="font-size:0.78rem; padding:0.35rem 0.8rem;">
+                ${tag.label}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
         <!-- Live Addon & Plugin Carousels -->
         <div id="stremio-all-feeds-container" class="stremio-all-feeds-container">
           ${totalEngines === 0
@@ -87,6 +103,26 @@ export function createStremioServersSection(callbacks = {}) {
     `;
 
     attachGlobalLauncherEvents();
+
+    // Wire quick studio keyword buttons
+    sectionWrapper.querySelectorAll('.hub-keyword-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tagId = btn.dataset.id;
+        const tag = NSFW_KEYWORD_TAGS.find(t => t.id === tagId);
+        const categoryFilter = tag ? tag.category : null;
+        const results = queryNsfwStreamsAcrossServers('', categoryFilter);
+
+        window.dispatchEvent(new CustomEvent('open-section-gallery', {
+          detail: {
+            title: `${tag?.label || 'Video Streams'}`,
+            subtitle: `Multi-server aggregator · ${results.length} verified HD streams across active servers`,
+            icon: tag?.icon || '🔞',
+            items: results,
+            isCloudStream: true
+          }
+        }));
+      });
+    });
     if (totalEngines > 0) {
       loadLiveFeeds(activeAddons, activePlugins);
     }

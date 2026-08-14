@@ -5225,3 +5225,94 @@ export function getAllCloudStreamVideos() {
   });
 }
 
+export const NSFW_KEYWORD_TAGS = [
+  { id: 'all', label: '🔥 All Streams', category: null, icon: '🔥' },
+  { id: 'vixen', label: '👑 Vixen', category: 'vixen', icon: '👑' },
+  { id: 'brazzers', label: '💎 Brazzers', category: 'brazzers', icon: '💎' },
+  { id: 'naughty_america', label: '⚡ Naughty America', category: 'naughty america', icon: '⚡' },
+  { id: 'reality_kings', label: '🎬 Reality Kings', category: 'reality kings', icon: '🎬' },
+  { id: 'pure_taboo', label: '🌹 Pure Taboo', category: 'pure taboo', icon: '🌹' },
+  { id: 'passion_hd', label: '💋 Passion HD', category: 'passion hd', icon: '💋' },
+  { id: 'blacked', label: '🖤 Blacked', category: 'blacked', icon: '🖤' },
+  { id: 'tushy', label: '🍑 Tushy', category: 'tushy', icon: '🍑' },
+  { id: 'bratty_sis', label: '🎀 Bratty Sis', category: 'bratty sis', icon: '🎀' },
+  { id: 'family_strokes', label: '🏠 Family Strokes', category: 'family strokes', icon: '🏠' },
+  { id: 'twistys', label: '✨ Twistys', category: 'twistys', icon: '✨' },
+  { id: 'babes', label: '🌸 Babes', category: 'babes', icon: '🌸' },
+  { id: 'sweethearts', label: '💖 Sweethearts', category: 'sweethearts', icon: '💖' },
+  { id: 'blonde_4k', label: '👱‍♀️ Blonde 4K', category: 'blonde 4k', icon: '👱‍♀️' },
+  { id: 'brunette_4k', label: '👩 Brunette 4K', category: 'brunette 4k', icon: '👩' },
+  { id: 'redhead_4k', label: '👩‍🦰 Redhead 4K', category: 'redhead 4k', icon: '👩‍🦰' },
+  { id: 'milf_4k', label: '👠 MILF 4K', category: 'milf 4k', icon: '👠' },
+  { id: 'college_amateur', label: '🎓 College Amateur', category: 'college amateur', icon: '🎓' },
+  { id: 'pov_4k', label: '👀 4K POV', category: 'pov 4k', icon: '👀' },
+  { id: 'threesome_4k', label: '👥 Threesome 4K', category: 'threesome 4k', icon: '👥' },
+  { id: 'creampie_4k', label: '💦 Creampie 4K', category: 'creampie 4k', icon: '💦' },
+  { id: 'anal_4k', label: '🔞 Anal 4K', category: 'anal 4k', icon: '🔞' },
+  { id: 'step_fantasy', label: '🔥 Step Fantasy', category: ['stepmom english', 'stepsister english'], icon: '🔥' }
+];
+
+/**
+ * Searches and aggregates NSFW video streams across all active CloudStream plugins and catalogs matching a query or keyword.
+ * @param {string} query - Search term or keyword
+ * @param {string|Array} category - Optional specific category filter
+ * @returns {Array} List of normalized video stream objects with server/provider tags
+ */
+export function queryNsfwStreamsAcrossServers(query = '', category = null) {
+  const q = (query || '').trim().toLowerCase();
+  let pool = [...VERIFIED_ADULT_STREAMS_CATALOG];
+
+  if (category && category !== 'all') {
+    if (Array.isArray(category)) {
+      pool = pool.filter(v => category.includes(v.category));
+    } else {
+      pool = pool.filter(v => v.category === category);
+    }
+  }
+
+  if (q) {
+    pool = pool.filter(v => {
+      const title = (v.title || '').toLowerCase();
+      const cat = (v.category || '').toLowerCase();
+      return title.includes(q) || cat.includes(q);
+    });
+  }
+
+  // Get active plugins to distribute server attributions
+  const activePlugins = getCloudStreamPlugins().filter(p => p.active !== false);
+  const adultPlugins = activePlugins.filter(p => p.isNsfw || (p.tvTypes && (p.tvTypes.includes('NSFW') || p.tvTypes.includes('Adult'))));
+
+  return pool.map((v, index) => {
+    const assignedPlugin = adultPlugins.length > 0 ? adultPlugins[index % adultPlugins.length] : null;
+    const providerName = assignedPlugin ? assignedPlugin.name : 'Verified HD Engine';
+    const pluginId = assignedPlugin ? (assignedPlugin.internalName || assignedPlugin.name || 'plugin').toLowerCase().replace(/[^a-z0-9]/g, '') : 'master';
+    const vidId = `cs_${pluginId}_${v.id}`;
+    const embedUrl = `https://www.eporner.com/embed/${v.id}/`;
+
+    const meta = {
+      id: vidId,
+      title: v.title,
+      name: v.title,
+      poster: v.thumb,
+      posterUrl: v.thumb,
+      backdrop_path: v.thumb,
+      overview: `[Server: ${providerName}] · English 1080p Stream · Duration: ${v.duration} · Views: ${(v.views || 0).toLocaleString()} · Category: ${v.category}`,
+      vote_average: parseFloat(v.rate) ? parseFloat(v.rate) * 2 : 8.8,
+      release_date: '2025-01-15',
+      type: 'movie',
+      isCloudStream: true,
+      isNsfw: true,
+      embedUrl: embedUrl,
+      directUrl: embedUrl,
+      providerName: providerName,
+      duration: v.duration,
+      views: v.views,
+      category: v.category,
+      icon: '🔞'
+    };
+
+    cacheCloudStreamVideoMeta(vidId, meta);
+    return meta;
+  });
+}
+

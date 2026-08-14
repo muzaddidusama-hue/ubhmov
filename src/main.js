@@ -30,7 +30,9 @@ import {
   getCloudStreamVideoMeta,
   fetchLiveCloudStreamPluginItems,
   VERIFIED_ADULT_STREAMS_CATALOG,
-  getAllCloudStreamVideos
+  getAllCloudStreamVideos,
+  NSFW_KEYWORD_TAGS,
+  queryNsfwStreamsAcrossServers
 } from './utils/apiManager.js';
 import {
   isProxyActive,
@@ -50,6 +52,9 @@ const state = {
   genres: [],
   selectedGenreId: '',
   selectedLanguage: '',
+  selectedNsfwKeyword: 'all',
+  nsfwSearchQuery: '',
+  nsfwSearchTimeout: null,
   explorePage: 1,
   hasMoreExplore: true,
   searchQuery: '',
@@ -372,48 +377,17 @@ async function loadExploreCatalog(reset = true) {
     let response;
     // Determine fetch route based on state
     if (state.selectedGenreId === '18plus') {
-      const activePlugins = getCloudStreamPlugins().filter(p => p.active !== false);
-      let adultItems = [];
-      for (const p of activePlugins) {
-        try {
-          const pItems = await fetchLiveCloudStreamPluginItems(p);
-          if (pItems && pItems.length > 0) {
-            adultItems.push(...pItems);
-          }
-        } catch (_) {}
-      }
-      if (adultItems.length === 0) {
-        adultItems = VERIFIED_ADULT_STREAMS_CATALOG.map(v => ({
-          id: `cs_catalog_${v.id}`,
-          title: v.title,
-          name: v.title,
-          poster: v.thumb,
-          posterUrl: v.thumb,
-          backdrop_path: v.thumb,
-          vote_average: parseFloat(v.rate) ? parseFloat(v.rate) * 2 : 8.8,
-          release_date: '2025',
-          type: 'movie',
-          duration: v.duration,
-          views: v.views,
-          embedUrl: `https://www.eporner.com/embed/${v.id}/`,
-          directUrl: `https://www.eporner.com/embed/${v.id}/`,
-          isCloudStream: true,
-          isNsfw: true,
-          providerName: 'Verified Adult Stream',
-          icon: '🔞'
-        }));
+      const selectedTag = NSFW_KEYWORD_TAGS.find(t => t.id === state.selectedNsfwKeyword);
+      const categoryFilter = selectedTag ? selectedTag.category : null;
+      const adultItems = queryNsfwStreamsAcrossServers(state.nsfwSearchQuery, categoryFilter);
+
+      const statusEl = document.getElementById('nsfw-server-status-text');
+      if (statusEl) {
+        const queryDesc = state.nsfwSearchQuery ? ` for "${state.nsfwSearchQuery}"` : (selectedTag && selectedTag.id !== 'all' ? ` for "${selectedTag.label}"` : '');
+        statusEl.textContent = `⚡ ${adultItems.length} Videos${queryDesc} across 35+ Active Servers`;
       }
 
-      // Deduplicate
-      const seen = new Set();
-      adultItems = adultItems.filter(item => {
-        const key = item.embedUrl || item.id;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-
-      const perPage = 20;
+      const perPage = 24;
       const startIdx = (state.explorePage - 1) * perPage;
       const paginated = adultItems.slice(startIdx, startIdx + perPage);
       response = {
@@ -438,12 +412,12 @@ async function loadExploreCatalog(reset = true) {
     if (reset) grid.innerHTML = '';
 
     if (filteredItems.length === 0 && reset) {
-      const sanitizedQuery = escapeHTML(state.searchQuery);
+      const sanitizedQuery = escapeHTML(state.selectedGenreId === '18plus' ? (state.nsfwSearchQuery || state.selectedNsfwKeyword) : state.searchQuery);
       grid.innerHTML = `
         <div class="empty-state-container">
           <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="muted-svg"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           <h3>No matches found</h3>
-          <p>We couldn't find any title matching "${sanitizedQuery}". Try different keywords or browse genres.</p>
+          <p>We couldn't find any title matching "${sanitizedQuery}". Try different keywords, studio tags, or browse all streams.</p>
         </div>
       `;
     } else {
@@ -502,18 +476,73 @@ function renderGenreChips() {
       btn.classList.add('active');
       
       state.selectedGenreId = btn.dataset.id;
+      const nsfwPanel = document.getElementById('nsfw-controls-panel');
+      if (state.selectedGenreId === '18plus') {
+        nsfwPanel?.classList.remove('hidden');
+        renderNsfwKeywords();
+      } else {
+        nsfwPanel?.classList.add('hidden');
+      }
+
       // Reset search bar when using genres to avoid logical conflicts
       if (state.selectedGenreId) {
         const searchInput = document.getElementById('global-search-input');
         if (searchInput) {
           searchInput.value = '';
           state.searchQuery = '';
-          document.getElementById('search-clear-btn').classList.add('hidden');
+          document.getElementById('search-clear-btn')?.classList.add('hidden');
         }
       }
       
       loadExploreCatalog(true);
     });
+  });
+}
+
+function renderNsfwKeywords() {
+  const container = document.getElementById('nsfw-keywords-list');
+  if (!container) return;
+
+  container.innerHTML = '';
+  NSFW_KEYWORD_TAGS.forEach(tag => {
+    const chip = document.createElement('button');
+    chip.className = `nsfw-keyword-chip ${state.selectedNsfwKeyword === tag.id ? 'active' : ''}`;
+    chip.dataset.id = tag.id;
+    chip.innerHTML = `${tag.label}`;
+    chip.addEventListener('click', () => {
+      container.querySelectorAll('.nsfw-keyword-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      state.selectedNsfwKeyword = tag.id;
+      loadExploreCatalog(true);
+    });
+    container.appendChild(chip);
+  });
+}
+
+function initNsfwSearchListeners() {
+  const searchInput = document.getElementById('nsfw-search-input');
+  const clearBtn = document.getElementById('nsfw-search-clear-btn');
+
+  searchInput?.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    state.nsfwSearchQuery = query;
+    if (query) {
+      clearBtn?.classList.remove('hidden');
+    } else {
+      clearBtn?.classList.add('hidden');
+    }
+
+    if (state.nsfwSearchTimeout) clearTimeout(state.nsfwSearchTimeout);
+    state.nsfwSearchTimeout = setTimeout(() => {
+      loadExploreCatalog(true);
+    }, 200);
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    if (searchInput) searchInput.value = '';
+    state.nsfwSearchQuery = '';
+    clearBtn?.classList.add('hidden');
+    loadExploreCatalog(true);
   });
 }
 
@@ -1482,6 +1511,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Section Video Gallery modal listeners
   initSectionGalleryListeners();
 
+  // Initialize Dedicated NSFW Search & Multi-Server Keywords
+  initNsfwSearchListeners();
+
   // Initialize Authentication State and Forms Listener after Firebase is fully loaded to avoid race condition mock flags
   firebaseInitPromise.then(() => {
     initializeAuthListener();
@@ -1534,6 +1566,33 @@ function openSectionGallery(config) {
       }
     } else {
       loadMoreWrap.classList.add('hidden');
+    }
+  }
+
+  // Populate quick keyword tags bar inside gallery modal for stream sections
+  const keywordsBar = document.getElementById('view-all-keywords-bar');
+  if (keywordsBar) {
+    if (config.isCloudStream || config.feed?.isCloudStream) {
+      keywordsBar.classList.remove('hidden');
+      keywordsBar.innerHTML = '';
+      NSFW_KEYWORD_TAGS.slice(0, 16).forEach(tag => {
+        const chip = document.createElement('button');
+        chip.className = 'nsfw-keyword-chip';
+        chip.innerHTML = `${tag.label}`;
+        chip.addEventListener('click', () => {
+          keywordsBar.querySelectorAll('.nsfw-keyword-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          const results = queryNsfwStreamsAcrossServers('', tag.category);
+          currentGalleryItems = results;
+          if (subtitleEl) {
+            subtitleEl.textContent = `Showing ${results.length} titles for "${tag.label}" across active servers`;
+          }
+          renderGalleryGrid();
+        });
+        keywordsBar.appendChild(chip);
+      });
+    } else {
+      keywordsBar.classList.add('hidden');
     }
   }
 

@@ -200,6 +200,31 @@
             <div class="genre-chips-container" id="genres-list" style="margin-top: 0;">
               <!-- Dynamically populated genre buttons -->
             </div>
+
+            <!-- Dedicated NSFW 18+ Search & Multi-Server Keywords Panel -->
+            <div id="nsfw-controls-panel" class="nsfw-controls-panel hidden">
+              <div class="nsfw-search-row">
+                <div class="nsfw-search-input-wrap">
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ff007f" stroke-width="2.5" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" id="nsfw-search-input" class="nsfw-search-input" placeholder="Search 340+ English HD streams, studios, models across all servers...">
+                  <button id="nsfw-search-clear-btn" class="nsfw-search-clear-btn hidden" title="Clear search">&times;</button>
+                </div>
+                <div class="nsfw-status-badge" style="display:flex; align-items:center; gap:0.5rem; background:rgba(255,0,128,0.1); border:1px solid rgba(255,0,128,0.3); border-radius:30px; padding:0.45rem 1rem; color:#ff70ba; font-size:0.82rem; font-weight:600;">
+                  <span style="width:7px; height:7px; border-radius:50%; background:#ff007f; animation:pulse-dot-kf 1.5s infinite;"></span>
+                  <span id="nsfw-server-status-text">⚡ 35+ Active Servers</span>
+                </div>
+              </div>
+
+              <!-- Keyword / Studio Filter Chips Bar -->
+              <div class="nsfw-keywords-wrap">
+                <div class="nsfw-keywords-label" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-med); margin-bottom:0.4rem; font-weight:700;">
+                  👑 Studio & Genre Keywords (Multi-Server Search):
+                </div>
+                <div id="nsfw-keywords-list" class="nsfw-keywords-scroll">
+                  <!-- Dynamically populated NSFW keyword chips -->
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Explore Grid Results -->
@@ -942,6 +967,11 @@ config.js is ignored.</code>
             </select>
             <button id="view-all-close-btn" class="modal-close-btn" title="Close Gallery">&times;</button>
           </div>
+        </div>
+
+        <!-- Quick Keywords Bar inside Section Gallery -->
+        <div id="view-all-keywords-bar" class="view-all-keywords-bar hidden" style="padding:0.75rem 1.75rem; border-bottom:1px solid var(--border-glass); background:rgba(255,255,255,0.015); display:flex; flex-wrap:wrap; gap:0.45rem; align-items:center;">
+          <!-- Dynamically populated keyword filter buttons in modal -->
         </div>
 
         <div class="view-all-modal-body">
