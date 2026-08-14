@@ -51,7 +51,7 @@ export function createStremioServersSection(callbacks = {}) {
             </p>
           </div>
           <button id="stremio-hub-see-all-master-btn" class="primary-btn accent-glow-btn" style="padding:0.6rem 1.25rem; font-size:0.85rem; display:inline-flex; align-items:center; gap:0.5rem; margin-top:0.35rem; cursor:pointer;">
-            <span>🔥 View All 340+ Streams</span>
+            <span>🔥 View All 2,600+ Streams</span>
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
@@ -94,7 +94,7 @@ export function createStremioServersSection(callbacks = {}) {
           <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
             <div class="nsfw-search-input-wrap" style="flex:1; min-width:280px;">
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ff007f" stroke-width="2.5" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <input type="text" id="stremio-nsfw-search-input" class="nsfw-search-input" placeholder="Search 340+ English HD streams, studios (Brazzers, Vixen, Naughty America), models across all servers..." autocomplete="off">
+              <input type="text" id="stremio-nsfw-search-input" class="nsfw-search-input" placeholder="Search 2,600+ English HD streams, studios (Brazzers, Vixen, Naughty America), models across all servers..." autocomplete="off">
             </div>
             <button id="stremio-nsfw-search-btn" class="primary-btn accent-glow-btn" style="background: linear-gradient(135deg, #ff007f, #7928ca); padding:0.65rem 1.6rem; font-size:0.88rem; font-weight:700; border:none; display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer;">
               <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
