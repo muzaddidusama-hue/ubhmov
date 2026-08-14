@@ -75,17 +75,45 @@ export function createStremioServersSection(callbacks = {}) {
           </button>
         </div>
 
-        <!-- Quick Studio & Keyword Tag Filters (Cross-Server Multi-Stream) -->
-        <div class="stremio-quick-keywords-bar" style="margin-top:1.25rem; display:flex; flex-direction:column; gap:0.5rem;">
-          <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-med); font-weight:700; display:flex; align-items:center; gap:0.5rem;">
-            <span>⚡ Quick Studio & Genre Multi-Server Streams:</span>
+        <!-- Dedicated Adult & Studio Multi-Server Search Bar -->
+        <div class="nsfw-hub-search-panel" style="margin-top:1.25rem; display:flex; flex-direction:column; gap:0.9rem; background: linear-gradient(135deg, rgba(255,0,128,0.08), rgba(121,40,202,0.06), rgba(0,242,254,0.04)); border: 1px solid rgba(255,0,128,0.3); border-radius:18px; padding:1.25rem 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.35);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <span style="font-size:1.3rem;">🔞</span>
+              <div>
+                <h3 style="font-size:1rem; font-weight:800; color:var(--text-high); margin:0;">Adult & Studio Multi-Server Stream Search</h3>
+                <p style="font-size:0.78rem; color:var(--text-med); margin:0.15rem 0 0;">Search across 35+ active CloudStream plugins & servers or select a studio keyword below</p>
+              </div>
+            </div>
+            <div style="display:inline-flex; align-items:center; gap:0.4rem; background:rgba(255,0,128,0.12); border:1px solid rgba(255,0,128,0.3); padding:0.35rem 0.85rem; border-radius:50px; font-size:0.78rem; color:#ff70ba; font-weight:700;">
+              <span style="width:7px; height:7px; border-radius:50%; background:#ff007f; animation:pulse-dot-kf 1.5s infinite;"></span>
+              <span>35+ Active CloudStream & Stremio Servers</span>
+            </div>
           </div>
-          <div id="stremio-hub-keywords-list" style="display:flex; flex-wrap:wrap; gap:0.45rem; align-items:center;">
-            ${NSFW_KEYWORD_TAGS.slice(0, 16).map(tag => `
-              <button class="nsfw-keyword-chip hub-keyword-btn" data-id="${tag.id}" data-label="${escapeHTML(tag.label)}" style="font-size:0.78rem; padding:0.35rem 0.8rem;">
-                ${tag.label}
-              </button>
-            `).join('')}
+
+          <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+            <div class="nsfw-search-input-wrap" style="flex:1; min-width:280px;">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ff007f" stroke-width="2.5" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="stremio-nsfw-search-input" class="nsfw-search-input" placeholder="Search 340+ English HD streams, studios (Brazzers, Vixen, Naughty America), models across all servers..." autocomplete="off">
+            </div>
+            <button id="stremio-nsfw-search-btn" class="primary-btn accent-glow-btn" style="background: linear-gradient(135deg, #ff007f, #7928ca); padding:0.65rem 1.6rem; font-size:0.88rem; font-weight:700; border:none; display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer;">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              Search All Servers
+            </button>
+          </div>
+
+          <!-- Studio & Genre Keywords Bar (All 24 Keywords) -->
+          <div style="display:flex; flex-direction:column; gap:0.45rem; margin-top:0.2rem;">
+            <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-med); font-weight:700;">
+              👑 Click Any Keyword Tag to Open Multi-Server Video Gallery:
+            </div>
+            <div id="stremio-hub-keywords-list" style="display:flex; flex-wrap:wrap; gap:0.45rem; align-items:center;">
+              ${NSFW_KEYWORD_TAGS.map(tag => `
+                <button class="nsfw-keyword-chip hub-keyword-btn" data-id="${tag.id}" data-label="${escapeHTML(tag.label)}" style="font-size:0.8rem; padding:0.35rem 0.85rem;">
+                  ${tag.label}
+                </button>
+              `).join('')}
+            </div>
           </div>
         </div>
 
@@ -104,6 +132,31 @@ export function createStremioServersSection(callbacks = {}) {
 
     attachGlobalLauncherEvents();
 
+    // Wire dedicated NSFW search button and Enter key
+    const triggerNsfwHubSearch = () => {
+      const q = sectionWrapper.querySelector('#stremio-nsfw-search-input')?.value?.trim() || '';
+      const results = queryNsfwStreamsAcrossServers(q, null);
+      window.dispatchEvent(new CustomEvent('open-section-gallery', {
+        detail: {
+          title: q ? `Search: "${q}"` : 'All Video Streams',
+          subtitle: `Multi-Server Search · Found ${results.length} verified streams across 35+ active servers`,
+          icon: '🔞',
+          items: results,
+          isCloudStream: true,
+          searchQuery: q,
+          selectedKeyword: 'all'
+        }
+      }));
+    };
+
+    sectionWrapper.querySelector('#stremio-nsfw-search-btn')?.addEventListener('click', triggerNsfwHubSearch);
+    sectionWrapper.querySelector('#stremio-nsfw-search-input')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        triggerNsfwHubSearch();
+      }
+    });
+
     // Wire quick studio keyword buttons
     sectionWrapper.querySelectorAll('.hub-keyword-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -115,10 +168,11 @@ export function createStremioServersSection(callbacks = {}) {
         window.dispatchEvent(new CustomEvent('open-section-gallery', {
           detail: {
             title: `${tag?.label || 'Video Streams'}`,
-            subtitle: `Multi-server aggregator · ${results.length} verified HD streams across active servers`,
+            subtitle: `Multi-Server Aggregator · Found ${results.length} verified streams for "${tag?.label}" across active servers`,
             icon: tag?.icon || '🔞',
             items: results,
-            isCloudStream: true
+            isCloudStream: true,
+            selectedKeyword: tagId
           }
         }));
       });

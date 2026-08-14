@@ -1550,7 +1550,7 @@ function openSectionGallery(config) {
   if (titleEl) titleEl.textContent = config.title || 'Section Gallery';
   if (subtitleEl) subtitleEl.textContent = config.subtitle || `Showing ${currentGalleryItems.length} available titles`;
   if (iconEl) iconEl.textContent = config.icon || (config.feed?.icon || '🎬');
-  if (searchInput) searchInput.value = '';
+  if (searchInput) searchInput.value = config.searchQuery || '';
   if (sortSelect) sortSelect.value = 'default';
 
   // Check if we can load more pages (for TMDB categories or full CloudStream library)
@@ -1569,21 +1569,26 @@ function openSectionGallery(config) {
     }
   }
 
-  // Populate quick keyword tags bar inside gallery modal for stream sections
+  // Populate quick keyword tags bar inside gallery modal for stream sections (all 24 studio keywords)
   const keywordsBar = document.getElementById('view-all-keywords-bar');
   if (keywordsBar) {
     if (config.isCloudStream || config.feed?.isCloudStream) {
       keywordsBar.classList.remove('hidden');
       keywordsBar.innerHTML = '';
-      NSFW_KEYWORD_TAGS.slice(0, 16).forEach(tag => {
+      NSFW_KEYWORD_TAGS.forEach(tag => {
         const chip = document.createElement('button');
-        chip.className = 'nsfw-keyword-chip';
+        const isMatch = (config.selectedKeyword && config.selectedKeyword === tag.id) || (!config.selectedKeyword && tag.id === 'all');
+        chip.className = `nsfw-keyword-chip ${isMatch ? 'active' : ''}`;
         chip.innerHTML = `${tag.label}`;
         chip.addEventListener('click', () => {
           keywordsBar.querySelectorAll('.nsfw-keyword-chip').forEach(c => c.classList.remove('active'));
           chip.classList.add('active');
-          const results = queryNsfwStreamsAcrossServers('', tag.category);
+          const currentSearch = searchInput ? searchInput.value.trim() : '';
+          const results = queryNsfwStreamsAcrossServers(currentSearch, tag.category);
           currentGalleryItems = results;
+          if (titleEl) {
+            titleEl.textContent = tag.id === 'all' ? 'All Video Streams' : `${tag.label} Streams`;
+          }
           if (subtitleEl) {
             subtitleEl.textContent = `Showing ${results.length} titles for "${tag.label}" across active servers`;
           }
