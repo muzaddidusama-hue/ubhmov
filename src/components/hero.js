@@ -29,7 +29,7 @@ export function createHeroSliderComponent(items, onPlay, onInfo) {
     const title = escapeHTML(rawTitle);
     const rawBackdropUrl = tmdb.getImageUrl(item.backdrop_path, 'original');
     const backdropUrl = sanitizeUrl(rawBackdropUrl, '');
-    const rating = escapeHTML(item.vote_average ? item.vote_average.toFixed(1) : 'N/A');
+    const rating = escapeHTML(item.vote_average ? (typeof item.vote_average === 'number' ? item.vote_average.toFixed(1) : String(item.vote_average)) : 'N/A');
     const releaseYear = escapeHTML((item.release_date || item.first_air_date || '').split('-')[0] || 'N/A');
     const overview = escapeHTML(item.overview || 'No description available.');
     const mediaType = (item.media_type || (item.first_air_date ? 'tv' : 'movie')) === 'tv' ? 'tv' : 'movie';

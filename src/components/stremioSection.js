@@ -349,7 +349,7 @@ export function createStremioServersSection(callbacks = {}) {
       const title = escapeHTML(item.title || item.name || 'Untitled');
       const rawTitle = item.title || item.name || 'Untitled';
       const imdbId = item.imdb_id || item.id || '';
-      const rating = escapeHTML(item.vote_average ? item.vote_average.toFixed(1) : '8.0');
+      const rating = escapeHTML(item.vote_average ? (typeof item.vote_average === 'number' ? item.vote_average.toFixed(1) : String(item.vote_average)) : '8.0');
       const releaseYear = escapeHTML((item.release_date || '').split('-')[0] || '');
       const type = item.type === 'tv' ? 'tv' : 'movie';
       

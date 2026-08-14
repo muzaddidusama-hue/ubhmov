@@ -1109,6 +1109,18 @@ body {
   transition: opacity var(--transition-smooth);
 }
 
+#view-all-modal {
+  z-index: 250;
+}
+
+#details-modal {
+  z-index: 450;
+}
+
+#player-modal {
+  z-index: 650;
+}
+
 .modal-backdrop:not(.hidden) {
   opacity: 1;
   pointer-events: auto;
@@ -1355,7 +1367,7 @@ body {
   width: 100vw;
   height: 100vh;
   background-color: var(--bg-darkest);
-  z-index: 300;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;

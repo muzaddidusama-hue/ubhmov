@@ -24,7 +24,7 @@ export function populateDetailsModal(item, type, isBookmarked, onPlay, onBookmar
   const backdropUrl = sanitizeUrl(rawBackdrop, '');
   const rawPoster = item.poster || item.posterUrl || (item.poster_path ? (item.poster_path.startsWith('http') ? item.poster_path : tmdb.getImageUrl(item.poster_path, 'w342')) : null) || stremioPosterFallback || 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster';
   const posterUrl = sanitizeUrl(rawPoster, 'https://placehold.co/342x513/0c0e15/ffffff?text=No+Poster');
-  const rating = escapeHTML(item.vote_average ? item.vote_average.toFixed(1) : 'N/A');
+  const rating = escapeHTML(item.vote_average ? (typeof item.vote_average === 'number' ? item.vote_average.toFixed(1) : String(item.vote_average)) : 'N/A');
   const releaseYear = escapeHTML((item.release_date || item.first_air_date || '').split('-')[0] || 'N/A');
   const runtimeText = escapeHTML(type === 'movie' 
     ? (item.runtime ? `${Math.floor(item.runtime / 60)}h ${item.runtime % 60}m` : 'N/A')
@@ -54,9 +54,9 @@ export function populateDetailsModal(item, type, isBookmarked, onPlay, onBookmar
   const releaseDateText = escapeHTML(item.release_date || item.first_air_date || 'N/A');
   const networks = escapeHTML((item.networks || []).slice(0, 2).map(n => n.name).join(', ') || '');
   const genresShort = escapeHTML((item.genres || []).slice(0, 3).map(g => g.name).join(', ') || 'N/A');
-  const budgetFormatted = escapeHTML(item.budget ? `$${item.budget.toLocaleString()}` : '');
-  const revenueFormatted = escapeHTML(item.revenue ? `$${item.revenue.toLocaleString()}` : '');
-  const popularityFormatted = escapeHTML(item.popularity ? item.popularity.toFixed(0) : 'N/A');
+  const budgetFormatted = escapeHTML(item.budget && typeof item.budget === 'number' ? `$${item.budget.toLocaleString()}` : '');
+  const revenueFormatted = escapeHTML(item.revenue && typeof item.revenue === 'number' ? `$${item.revenue.toLocaleString()}` : '');
+  const popularityFormatted = escapeHTML(item.popularity ? (typeof item.popularity === 'number' ? item.popularity.toFixed(0) : String(item.popularity)) : 'N/A');
   const originalLanguage = escapeHTML((item.original_language || 'en').toUpperCase());
   
   // Find trailer

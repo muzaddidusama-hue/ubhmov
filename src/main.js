@@ -1601,7 +1601,10 @@ function renderGalleryGrid() {
 
   filtered.forEach(item => {
     const cardType = currentGallerySection?.mediaType || item.media_type || item.type || (item.first_air_date ? 'tv' : 'movie');
-    const card = createMovieCard(item, cardType, handleInfoClick);
+    const card = createMovieCard(item, cardType, (clickedItem, type) => {
+      document.getElementById('view-all-modal')?.classList.add('hidden');
+      handleInfoClick(clickedItem || item, type || cardType);
+    });
     grid.appendChild(card);
   });
 }
